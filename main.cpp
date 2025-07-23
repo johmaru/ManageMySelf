@@ -1,10 +1,11 @@
-#include <QStandardPaths>
 #include <Qstring>
-#include <QDir>
 #include <QFile>
 #include <QApplication>
 #include <QWidget>
 #include <QJsonDocument>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
 #include "global_settings.h"
 
 int SettingsInit(const QString &filePath);
@@ -30,6 +31,15 @@ int main(int argc, char *argv[]) {
     QWidget window;
     window.resize(settings.windowSize);
     window.setWindowTitle("Manage my self");
+
+    auto *label = new QLabel("test",&window );
+    auto *button = new QPushButton("押す", &window);
+
+    auto *layout = new QVBoxLayout(&window);
+
+    layout->addWidget(label);
+    layout->addWidget(button);
+
     window.show();
 
     return QApplication::exec();
