@@ -2,7 +2,7 @@
 // Created by Johma on 25/07/22.
 //
 
-#include "JsonSettingsBase.h"
+#include "../fs/JsonSettingsBase.h"
 #include <QFile>
 #include <QJsonDocument>
 #include <QDebug>
@@ -14,9 +14,9 @@ bool JsonSettingsBase::saveToFile(const QString &filePath) const {
         return false;
     }
 
-    QJsonObject settingsObject = this->toJson();
+    const QJsonObject settingsObject = this->toJson();
 
-    QJsonDocument saveDoc(settingsObject);
+    const QJsonDocument saveDoc(settingsObject);
     saveFile.write(saveDoc.toJson(QJsonDocument::Indented));
     saveFile.close();
 
@@ -33,8 +33,8 @@ bool JsonSettingsBase::loadFromFile(const QString &filePath) {
         return false;
     }
 
-    QByteArray saveData = loadFile.readAll();
-    QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
+    const QByteArray saveData = loadFile.readAll();
+    const QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
     loadFile.close();
 
     if (loadDoc.isNull()) {
@@ -53,8 +53,8 @@ bool JsonSettingsBase::checkFile(const QString &filePath) {
         return false;
     }
 
-    QByteArray saveData = loadFile.readAll();
-    QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
+    const QByteArray saveData = loadFile.readAll();
+    const QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
     loadFile.close();
 
     if (loadDoc.isNull()) {

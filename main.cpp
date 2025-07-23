@@ -1,4 +1,4 @@
-#include <Qstring>
+#include <QString>
 #include <QFile>
 #include <QApplication>
 #include <QWidget>
@@ -6,7 +6,9 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include "global_settings.h"
+
+#include "control/gui/MainGUI.h"
+#include "fs/global_settings.h"
 
 int SettingsInit(const QString &filePath);
 
@@ -29,26 +31,14 @@ int main(int argc, char *argv[]) {
     settings.loadFromFile(filePath);
 
     QWidget window;
-    window.resize(settings.windowSize);
-    window.setWindowTitle("Manage my self");
 
-    auto *label = new QLabel("test",&window );
-    auto *button = new QPushButton("押す", &window);
-
-    auto *layout = new QVBoxLayout(&window);
-
-    layout->addWidget(label);
-    layout->addWidget(button);
-
-    window.show();
+    MainGUI::first_page_navigate(&window, settings);
 
     return QApplication::exec();
 }
 
 int SettingsInit(const QString &filePath) {
-
-    QFile settingsFile(filePath);
-    if (!settingsFile.exists()) {
+    if (QFile settingsFile(filePath); !settingsFile.exists()) {
         qInfo() << "Can't find the setting file, which will be created now.";
         if (!settingsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             qWarning() << "Failed to open the file: " << settingsFile.errorString();

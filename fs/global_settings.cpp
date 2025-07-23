@@ -2,7 +2,7 @@
 // Created by Johma on 25/07/22.
 //
 
-#include "global_settings.h"
+#include "../fs/global_settings.h"
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -15,7 +15,7 @@ const QString SETTINGS_DIR_NAME = "ManageMySelf";
 const QString SETTINGS_FILE_NAME = "settings.json";
 
 QString GlobalSettings::getFilePath() const {
-    QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    const QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
     if (documentsPath.isEmpty()) {
         qWarning() << "Cant get the path for document folder";
