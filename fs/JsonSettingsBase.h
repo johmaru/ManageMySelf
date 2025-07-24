@@ -17,8 +17,6 @@ public:
 
     [[nodiscard]] bool saveToFile(const QString &filePath) const;
 
-    static bool checkFile(const QString &filePath) ;
-
     bool loadFromFile(const QString &filePath);
 
     [[nodiscard]] virtual QString getFilePath() const = 0;

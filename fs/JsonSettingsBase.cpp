@@ -24,43 +24,29 @@ bool JsonSettingsBase::saveToFile(const QString &filePath) const {
 }
 
 bool JsonSettingsBase::loadFromFile(const QString &filePath) {
-    if (!checkFile(filePath)) {
-        return false;
-    }
     QFile loadFile(filePath);
-    if (!loadFile.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open load file" << filePath;
+    if (!loadFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Couldn't open settings file for reading:" << filePath;
         return false;
     }
 
     const QByteArray saveData = loadFile.readAll();
-    const QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
     loadFile.close();
 
+    QJsonParseError parseError;
+    const QJsonDocument loadDoc = QJsonDocument::fromJson(saveData, &parseError);
+
     if (loadDoc.isNull()) {
-        qWarning() << "Couldn't parse load file" << filePath;
+        qWarning() << "Couldn't parse settings file:" << filePath;
+        qWarning() << "Parse error:" << parseError.errorString();
+        return false;
+    }
+
+    if (!loadDoc.isObject()) {
+        qWarning() << "Settings file does not contain a JSON object:" << filePath;
         return false;
     }
 
     this->loadFromJson(loadDoc.object());
-    return true;
-}
-
-bool JsonSettingsBase::checkFile(const QString &filePath) {
-    QFile loadFile(filePath);
-    if (!loadFile.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open load file" << filePath;
-        return false;
-    }
-
-    const QByteArray saveData = loadFile.readAll();
-    const QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
-    loadFile.close();
-
-    if (loadDoc.isNull()) {
-        qWarning() << "Couldn't parse load file" << filePath;
-        return false;
-    }
-
     return true;
 }

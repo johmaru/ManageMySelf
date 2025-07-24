@@ -6,14 +6,26 @@
 #define MANAGEMYSELF_GLOBAL_SETTINGS_H
 
 #include "JsonSettingsBase.h"
-#include <Qstring>
+#include <QString>
 #include <QSize>
-#include <QStandardPaths>
-#include <QDir>
+#include <QObject>
 
-class GlobalSettings final : public JsonSettingsBase {
+class GlobalSettings final :public QObject,  public JsonSettingsBase {
+    Q_OBJECT
+
+    Q_PROPERTY(int windowWidth READ getWindowWidth NOTIFY windowSizeChanged)
+    Q_PROPERTY(int windowHeight READ getWindowHeight NOTIFY windowSizeChanged)
+
 public:
-    GlobalSettings() : language("en"), windowSize(800, 600) {}
+    explicit GlobalSettings(QObject *parent = nullptr) : QObject(parent), language("en"), windowSize(800, 600) {}
+
+    [[nodiscard]] int getWindowWidth() const {return windowSize.width();}
+    [[nodiscard]] int getWindowHeight() const {return windowSize.height();}
+
+signals:
+    void windowSizeChanged();
+
+public:
 
     QString language;
     QSize windowSize;
@@ -40,8 +52,8 @@ public:
         if (json.contains("windowSize") && json["windowSize"].isObject())
         {
             QJsonObject sizeObject = json["windowSize"].toObject();
-            int width = 800;
-            int height = 600;
+            int width = windowSize.width();
+            int height = windowSize.height();
             if (sizeObject.contains("width") && sizeObject["width"].isDouble())
             {
                 width = sizeObject["width"].toInt(width);
@@ -49,9 +61,12 @@ public:
             if (sizeObject.contains("height") && sizeObject["height"].isDouble())
             {
                 height = sizeObject["height"].toInt(height);
-            } else
+            }
+            QSize newSize(width, height);
+            if (newSize != windowSize)
             {
-                windowSize = QSize(width, height);
+                windowSize = newSize;
+                emit windowSizeChanged();
             }
         }
     }
