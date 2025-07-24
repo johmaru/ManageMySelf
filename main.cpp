@@ -16,14 +16,12 @@ int main(int argc, char *argv[]) {
 
     auto *settings = new GlobalSettings(&engine);
 
-    GlobalSettings fsSettings;
+    const QString filePath = settings->getFilePath();
 
-    const QString filePath = fsSettings.getFilePath();
-
-    if (filePath.isEmpty() || !fsSettings.loadFromFile(filePath)) {
+    if (filePath.isEmpty() || !settings->loadFromFile(filePath)) {
         qWarning() << "Could not load settings from" << filePath << ". Using default settings and creating a new file.";
         if (!filePath.isEmpty()) {
-            if (!fsSettings.saveToFile(filePath)) {
+            if (!settings->saveToFile(filePath)) {
                 qWarning() << "Failed to save initial settings file to" << filePath;
             }
         }

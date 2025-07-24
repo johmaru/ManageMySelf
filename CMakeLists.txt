@@ -7,7 +7,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Qml Quick QuickCOntrols2)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Qml Quick QuickControls2)
 
 add_executable(ManageMySelf main.cpp
         qml.qrc
