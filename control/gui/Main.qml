@@ -11,21 +11,101 @@ ApplicationWindow {
     height: settings.windowHeight
 
     Material.theme: settings.theme === "light" ? Material.Light : Material.Dark
-    title: "Manage My Self Main"
 
-    Label {
-        anchors.centerIn: parent
-        text: "Hello From QML"
+    title: qsTr("TitleMain")
+
+    StackView {
+        id: stackView
+        anchors.fill: parent
+        initialItem: mainContent
     }
 
-    ComboBox {
-        id: workspaceComboBox
+    Component {
+        id: mainContent
 
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: 12
-        anchors.bottomMargin: 12
+        Item {
+            Label {
+                anchors.centerIn: parent
 
-        model: ["新規作成","開く"]
+                text: qsTr("Text1")
+            }
+
+            ComboBox {
+                id: workspaceComboBox
+
+                anchors.left: parent.left
+                anchors.bottom: parent.bottom
+                anchors.leftMargin: 12
+                anchors.bottomMargin: 12
+
+                model: [qsTr("WorkspaceCreateNew"), qsTr("WorkSpaceOpen")]
+
+                currentIndex: -1
+                displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
+
+                property bool isInitialized: false
+
+                Component.onCompleted: {
+                    isInitialized = true
+                }
+
+                onCurrentIndexChanged: {
+
+                    if (isInitialized && currentIndex !== -1) {
+                        handleSelectionChange(currentIndex)
+                        currentIndex = -1
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: createWorkspaceComponent
+
+        Item {
+            Label {
+                anchors.centerIn: parent
+                text: qsTr("Create New Workspace")
+            }
+
+            Button {
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Back")
+                onClicked: stackView.pop()
+            }
+        }
+    }
+
+    Component {
+        id: openWorkspaceComponent
+
+        Item {
+            Label {
+                anchors.centerIn: parent
+                text: qsTr("Open Workspace")
+            }
+
+            Button {
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Back")
+                onClicked: stackView.pop()
+            }
+        }
+    }
+
+    function handleSelectionChange(index) {
+        switch (index) {
+            case 0:
+                stackView.push(createWorkspaceComponent)
+                break
+            case 1:
+                stackView.push(openWorkspaceComponent)
+                break
+            default:
+                console.log("Unknown option selected")
+        }
     }
 }

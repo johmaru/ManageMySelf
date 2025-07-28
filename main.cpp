@@ -1,16 +1,17 @@
-#include <iostream>
 #include <QString>
 #include <QFile>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDebug>
+#include <QTranslator>
+#include <QLocale>
 
 #include "fs/global_settings.h"
 
 int main(int argc, char *argv[]) {
 
-    QGuiApplication a(argc, argv);
+    QApplication a(argc, argv);
 
     QQmlApplicationEngine engine;
 
@@ -25,6 +26,23 @@ int main(int argc, char *argv[]) {
                 qWarning() << "Failed to save initial settings file to" << filePath;
             }
         }
+    }
+
+    // 翻訳ファイルのロード
+    QTranslator translator;
+    QString locale = settings->getLanguage();
+    qDebug() << locale;
+    QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(locale);
+
+    if (QFile::exists(":/i18n/ManageMySelf_" + locale + ".qm")) {
+        if (translator.load(translationFile)) {
+            a.installTranslator(&translator);
+            qDebug() << "Loaded translation file:" << translationFile;
+        } else {
+            qDebug() << "Failed to load translation file:" << translationFile;
+        }
+    } else {
+        qDebug() << "Translation file does not exist:" << translationFile;
     }
 
 

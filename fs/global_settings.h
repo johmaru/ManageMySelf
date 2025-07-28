@@ -25,6 +25,7 @@ public:
     [[nodiscard]] int getWindowWidth() const {return m_windowSize.width();}
     [[nodiscard]] int getWindowHeight() const {return m_windowSize.height();}
     [[nodiscard]] QString getTheme() const {return m_theme;}
+    [[nodiscard]] QString getLanguage() const {return m_language;}
 
     void setTheme(const QString &newTheme)
     {

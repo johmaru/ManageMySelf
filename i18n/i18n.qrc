@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/i18n">
+        <file>ManageMySelf_ja.qm</file>
+        <file>ManageMySelf_en.qm</file>
+    </qresource>
+</RCC>

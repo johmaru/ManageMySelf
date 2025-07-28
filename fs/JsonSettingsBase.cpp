@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QDebug>
 
+// IO副作用として、指定のパスにファイルを新規作成、または、編集する
 bool JsonSettingsBase::saveToFile(const QString &filePath) const {
     QFile saveFile(filePath);
     if (!saveFile.open(QIODevice::WriteOnly)) {

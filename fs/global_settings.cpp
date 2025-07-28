@@ -14,6 +14,8 @@
 const QString SETTINGS_DIR_NAME = "ManageMySelf";
 const QString SETTINGS_FILE_NAME = "settings.json";
 
+// 呼び出すと現在定義されている 'GlobalSettings'に値がセットされる。
+// IO副作用として、'SETTINGS_DIR_NAME'のディレクトリが特殊パスDocumentに存在しない場合に、ディレクトリが作成される。
 QString GlobalSettings::getFilePath() const {
     const QString documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 

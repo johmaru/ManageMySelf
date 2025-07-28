@@ -6,17 +6,86 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets LinguistTools Gui Qml Quick QuickControls2)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Qml Quick QuickControls2)
+# lupdateとlreleaseの実行可能ファイルパスを取得
+get_target_property(Qt6_LUPDATE_EXECUTABLE Qt6::lupdate IMPORTED_LOCATION)
+get_target_property(Qt6_LRELEASE_EXECUTABLE Qt6::lrelease IMPORTED_LOCATION)
+
+# 翻訳ファイルの定義
+set(TS_FILES
+    ${CMAKE_SOURCE_DIR}/i18n/ManageMySelf_ja.ts
+    ${CMAKE_SOURCE_DIR}/i18n/ManageMySelf_en.ts
+)
+
+# .qmファイルの出力ディレクトリを設定
+set(QM_DIR ${CMAKE_CURRENT_BINARY_DIR})
+file(MAKE_DIRECTORY ${QM_DIR})
+
+# .qmファイルの生成
+set(QM_FILES)
+foreach(TS_FILE ${TS_FILES})
+    get_filename_component(TS_NAME ${TS_FILE} NAME_WE)
+    set(QM_FILE ${QM_DIR}/${TS_NAME}.qm)
+    list(APPEND QM_FILES ${QM_FILE})
+
+    # lreleaseの実行可能ファイルが見つかった場合のみカスタムコマンドを追加
+    if(Qt6_LRELEASE_EXECUTABLE)
+        add_custom_command(
+            OUTPUT ${QM_FILE}
+            COMMAND ${Qt6_LRELEASE_EXECUTABLE} ${TS_FILE} -qm ${QM_FILE}
+            DEPENDS ${TS_FILE}
+            COMMENT "Generating ${QM_FILE}"
+        )
+    else()
+        message(WARNING "Qt lrelease executable not found. Translation files will not be generated.")
+    endif()
+endforeach()
+
+get_target_property(Qt6_RCC_EXECUTABLE Qt6::rcc IMPORTED_LOCATION)
+set(I18N_QRC_FILE ${CMAKE_SOURCE_DIR}/i18n/i18n.qrc)
+set(I18N_RCC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/qrc_translations.cpp)
+
+# ビルドディレクトリにQRCファイルをコピーする
+set(I18N_QRC_FILE_BUILD ${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc)
+add_custom_command(
+        OUTPUT ${I18N_QRC_FILE_BUILD}
+        COMMAND ${CMAKE_COMMAND} -E copy ${I18N_QRC_FILE} ${I18N_QRC_FILE_BUILD}
+        DEPENDS ${I18N_QRC_FILE}
+        COMMENT "Copying QRC file to build directory"
+)
+
+# コピーされたQRCファイルを使ってrccを実行する
+add_custom_command(
+        OUTPUT ${I18N_RCC_OUTPUT}
+        COMMAND ${Qt6_RCC_EXECUTABLE} -g cpp -o ${I18N_RCC_OUTPUT} ${I18N_QRC_FILE_BUILD}
+        DEPENDS ${I18N_QRC_FILE_BUILD} ${QM_FILES}
+        WORKING_DIRECTORY ${QM_DIR}
+        COMMENT "Compiling translations QRC ${I18N_QRC_FILE}"
+)
+
+# 翻訳ファイルの更新用カスタムターゲット
+if(Qt6_LUPDATE_EXECUTABLE)
+    add_custom_target(update_translations
+        COMMAND ${Qt6_LUPDATE_EXECUTABLE} ${CMAKE_SOURCE_DIR} -ts ${TS_FILES}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Updating translation files..."
+    )
+else()
+    add_custom_target(update_translations
+        COMMAND ${CMAKE_COMMAND} -E echo "Qt lupdate executable not found. Please install Qt Linguist tools."
+        COMMENT "Qt lupdate not available"
+    )
+endif()
 
 add_executable(ManageMySelf main.cpp
         qml.qrc
         fs/global_settings.cpp
         fs/global_settings.h
         fs/JsonSettingsBase.cpp
-        fs/JsonSettingsBase.h)
-
-#set_target_properties(ManageMySelf PROPERTIES WIN32_EXECUTABLE ON)
+        fs/JsonSettingsBase.h
+        ${I18N_RCC_OUTPUT}
+)
 
 target_link_libraries(ManageMySelf
         Qt::Core
@@ -27,7 +96,6 @@ target_link_libraries(ManageMySelf
 )
 
 if(WIN32)
-
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND $<TARGET_FILE:Qt6::windeployqt>
             ARGS
