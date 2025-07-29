@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import QtQuick.Dialogs
 
 ApplicationWindow {
     id: root
@@ -13,6 +14,43 @@ ApplicationWindow {
     Material.theme: settings.theme === "light" ? Material.Light : Material.Dark
 
     title: qsTr("TitleMain")
+
+    onClosing: function (close) {
+        close.accepted = false;
+        exitDialog.open();
+    }
+
+    header: ToolBar {
+        RowLayout {
+            anchors.fill : parent
+            spacing: 10
+
+            ToolButton {
+                text: qsTr("ToolBarFile")
+
+                Menu {
+                    id: fileMenu
+                    y: parent.height
+
+                    MenuItem {
+                        text: qsTr("ToolBarExit")
+                        implicitWidth: 100
+                        implicitHeight: 30
+                        contentItem: Text {
+                            text: parent.text
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            root.close();
+                        }
+                    }
+                }
+
+                onClicked: fileMenu.open()
+            }
+        }
+    }
 
     StackView {
         id: stackView
@@ -107,5 +145,13 @@ ApplicationWindow {
             default:
                 console.log("Unknown option selected")
         }
+    }
+
+    MessageDialog {
+        id: exitDialog
+        title: qsTr("MessageDialogConfirmExit")
+        text: qsTr("MessageDialogText")
+        buttons: MessageDialog.Ok | MessageDialog.Cancel
+        onAccepted: Qt.quit()
     }
 }
