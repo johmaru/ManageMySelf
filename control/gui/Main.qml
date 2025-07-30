@@ -4,6 +4,8 @@ import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
 
+/* global settings */
+
 ApplicationWindow {
     id: root
     visible: true

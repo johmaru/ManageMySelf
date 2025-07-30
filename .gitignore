@@ -88,3 +88,9 @@ compile_commands.json
 
 *_qmlcache.qrc
 
+# QtCreator 5.0+ build
+build
+.cache
+
+# Idea
+.idea

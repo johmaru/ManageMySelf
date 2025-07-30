@@ -1,12 +1,34 @@
 cmake_minimum_required(VERSION 3.31)
 project(ManageMySelf)
+set(QT_QML_GENERATE_QMLLS_INI ON)
+
+set(CMAKE_C_COMPILER "C:/Qt/Tools/mingw1310_64/bin/gcc.exe")
+set(CMAKE_CXX_COMPILER "C:/Qt/Tools/mingw1310_64/bin/g++.exe")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets LinguistTools Gui Qml Quick QuickControls2)
+# Set the Qt installation path
+set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/mingw_64")
+
+# Find all required Qt packages
+find_package(Qt6 REQUIRED COMPONENTS 
+    Core 
+    Widgets 
+    LinguistTools 
+    Gui 
+    Qml 
+    Quick 
+    QuickControls2 
+    QuickLayouts
+)
+
+qt_policy(SET QTP0001 NEW)
+
+# Enable QML debugging and language server support
+set(QT_QMLLS_PLUGINS ON)
 
 # lupdateとlreleaseの実行可能ファイルパスを取得
 get_target_property(Qt6_LUPDATE_EXECUTABLE Qt6::lupdate IMPORTED_LOCATION)
@@ -64,6 +86,9 @@ add_custom_command(
         COMMENT "Compiling translations QRC ${I18N_QRC_FILE}"
 )
 
+# QMLリソースの追加
+qt_add_resources(QM_FILES "qml.qrc")
+
 # 翻訳ファイルの更新用カスタムターゲット
 if(Qt6_LUPDATE_EXECUTABLE)
     add_custom_target(update_translations
@@ -78,13 +103,25 @@ else()
     )
 endif()
 
-add_executable(ManageMySelf main.cpp
-        qml.qrc
+# 実行
+add_custom_target(run
+    COMMAND ${CMAKE_PROJECT_NAME}
+    DEPENDS ${PROJECT_NAME}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running ManageMySelf..."
+)
+
+add_executable(ManageMySelf
+        ${QM_FILES}
+        main.cpp
         fs/global_settings.cpp
-        fs/global_settings.h
         fs/JsonSettingsBase.cpp
-        fs/JsonSettingsBase.h
         ${I18N_RCC_OUTPUT}
+)
+
+target_include_directories(ManageMySelf PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_link_libraries(ManageMySelf
@@ -93,7 +130,16 @@ target_link_libraries(ManageMySelf
         Qt::Gui
         Qt::Qml
         Qt::Quick
+        Qt::QuickControls2
+        Qt::QuickLayouts
 )
+
+# Set QML import paths for the IDE
+if(Qt6_Qml_FOUND)
+    get_target_property(QT_QML_IMPORT_PATH Qt6::Qml IMPORTED_LOCATION)
+    get_filename_component(QT_QML_IMPORT_PATH "${QT_QML_IMPORT_PATH}/../../qml" ABSOLUTE)
+    set(QML_IMPORT_PATH "${QT_QML_IMPORT_PATH}" CACHE STRING "Qt QML import paths" FORCE)
+endif()
 
 if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
