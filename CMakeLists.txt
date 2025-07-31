@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.31)
 project(ManageMySelf)
+
+# === ここから追加 ===
+# Qt MinGW環境でlibssp.aが見つからない問題への対策
+# スタック保護機能を明示的に無効化する
+if(CMAKE_COMPILER_IS_GNUCXX)
+    add_compile_options(-fno-stack-protector)
+endif()
+# === ここまで追加 ===
+
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
-set(CMAKE_C_COMPILER "C:/Qt/Tools/mingw1310_64/bin/gcc.exe")
-set(CMAKE_CXX_COMPILER "C:/Qt/Tools/mingw1310_64/bin/g++.exe")
+# set(CMAKE_C_COMPILER "C:/Qt/Tools/mingw1310_64/bin/gcc.exe")
+# set(CMAKE_CXX_COMPILER "C:/Qt/Tools/mingw1310_64/bin/g++.exe")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_AUTOMOC ON)
@@ -22,6 +31,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     QuickControls2 
     QuickLayouts
 )
+
+find_package(SQLiteCpp REQUIRED)
 
 qt_policy(SET QTP0001 NEW)
 
@@ -129,6 +140,7 @@ target_link_libraries(ManageMySelf
         Qt::Quick
         Qt::QuickControls2
         Qt::QuickLayouts
+        SQLiteCpp
 )
 
 if(Qt6_Qml_FOUND)

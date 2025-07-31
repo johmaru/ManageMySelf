@@ -42,6 +42,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    
+
     QTranslator translator;
     QString locale = settings->getLanguage();
     QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(locale);

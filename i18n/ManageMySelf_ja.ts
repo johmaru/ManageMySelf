@@ -194,63 +194,68 @@ Do you want to replace it?</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../control/gui/Main.qml" line="16"/>
+        <location filename="../control/gui/Main.qml" line="24"/>
         <source>TitleMain</source>
         <translation>メイン -- ManageMySelf</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="29"/>
+        <location filename="../control/gui/Main.qml" line="41"/>
         <source>ToolBarFile</source>
         <translation>ファイル</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="36"/>
+        <location filename="../control/gui/Main.qml" line="48"/>
         <source>ToolBarExit</source>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="68"/>
+        <location filename="../control/gui/Main.qml" line="81"/>
         <source>Text1</source>
         <translation>テスト</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="79"/>
+        <location filename="../control/gui/Main.qml" line="92"/>
         <source>WorkspaceCreateNew</source>
         <translation>新規作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="79"/>
+        <location filename="../control/gui/Main.qml" line="92"/>
         <source>WorkSpaceOpen</source>
         <translation>オープン</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="82"/>
+        <location filename="../control/gui/Main.qml" line="95"/>
         <source>WorkSpaceSelect</source>
         <translation>選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="107"/>
-        <source>Create New Workspace</source>
-        <translation>ワークスペースを作成する</translation>
+        <location filename="../control/gui/Main.qml" line="124"/>
+        <source>WorkspaceName</source>
+        <translation>ワークスペース名</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="113"/>
-        <location filename="../control/gui/Main.qml" line="131"/>
+        <location filename="../control/gui/Main.qml" line="145"/>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="153"/>
+        <location filename="../control/gui/Main.qml" line="172"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="125"/>
+        <location filename="../control/gui/Main.qml" line="166"/>
         <source>Open Workspace</source>
         <translation>ワークスペースを開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="152"/>
+        <location filename="../control/gui/Main.qml" line="193"/>
         <source>MessageDialogConfirmExit</source>
         <translation>終了する</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="153"/>
+        <location filename="../control/gui/Main.qml" line="199"/>
         <source>MessageDialogText</source>
         <translation>本当に終了しますか？</translation>
     </message>

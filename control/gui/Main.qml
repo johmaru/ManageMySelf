@@ -116,15 +116,43 @@ ApplicationWindow {
 
         Item {
             Label {
-                anchors.centerIn: parent
-                text: qsTr("Create New Workspace")
+                id: createWorkspaceLabel
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.topMargin: 20
+                font.pixelSize: 18
+                text: qsTr("WorkspaceName")
             }
 
-            Button {
+            TextField {
+                id: workspaceNameTextField
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: createWorkspaceLabel.bottom
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                anchors.topMargin: 20
+            }
+
+             RowLayout {
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Back")
-                onClicked: stackView.pop()
+                anchors.bottomMargin: 20
+                spacing: 10
+
+                Button {
+                    text: qsTr("Create")
+                    onClicked: {
+                        console.log("Create workspace: " + workspaceNameTextField.text)
+                        stackView.pop()
+                    }
+                }
+
+                Button {
+                    text: qsTr("Back")
+                    onClicked: stackView.pop()
+                }
             }
         }
     }
