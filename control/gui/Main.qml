@@ -10,6 +10,12 @@ ApplicationWindow {
     id: root
     visible: true
 
+    Component.onCompleted: {
+        requestActivate()
+    }
+
+    property bool forceClose: false
+
     width: settings.windowWidth
     height: settings.windowHeight
 
@@ -18,6 +24,10 @@ ApplicationWindow {
     title: qsTr("TitleMain")
 
     onClosing: function (close) {
+        if (forceClose) {
+            close.accepted = true;
+            return;
+        }
         close.accepted = false;
         exitDialog.open();
     }
@@ -40,6 +50,7 @@ ApplicationWindow {
                         implicitHeight: 30
                         contentItem: Text {
                             text: parent.text
+                            color: Material.foreground
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -149,11 +160,21 @@ ApplicationWindow {
         }
     }
 
-    MessageDialog {
+    Dialog {
         id: exitDialog
         title: qsTr("MessageDialogConfirmExit")
-        text: qsTr("MessageDialogText")
-        buttons: MessageDialog.Ok | MessageDialog.Cancel
-        onAccepted: Qt.quit()
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        modal: true
+        anchors.centerIn: parent
+
+        Label {
+            text: qsTr("MessageDialogText")
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        onAccepted: {
+            forceClose = true;
+            root.close();
+        }
     }
 }

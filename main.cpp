@@ -13,6 +13,7 @@
 #include <QSettings>
 #include <QQuickStyle>
 #include <QQmlComponent>
+#include <QQuickWindow>
 
 #include "fs/global_settings.h"
 
@@ -20,14 +21,11 @@ int main(int argc, char *argv[]) {
 
     QGuiApplication a(argc, argv);
 
-    // アプリケーションの設定
-    a.setOrganizationName("YourOrganization");
+    a.setOrganizationName("Johma");
     a.setApplicationName("ManageMySelf");
-    // a.setWindowIcon(QIcon(":/icon.png"));  // アイコンがある場合
 
     QQmlApplicationEngine engine;
 
-    // QMLのインポートパスを設定
     engine.addImportPath("qrc:/");
     engine.addImportPath("C:/Qt/6.9.1/mingw_64/qml");
 
@@ -44,10 +42,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 翻訳ファイルのロード
     QTranslator translator;
     QString locale = settings->getLanguage();
-    qDebug() << locale;
     QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(locale);
 
     if (QFile::exists(":/i18n/ManageMySelf_" + locale + ".qm")) {
@@ -65,14 +61,12 @@ int main(int argc, char *argv[]) {
 
     const QUrl url(QStringLiteral("qrc:/Main.qml"));
 
-    // アプリケーション終了のシグナル接続
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &a, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
 
-    // QMLのロード
     engine.load(url);
 
     if (engine.rootObjects().isEmpty()) {
@@ -80,7 +74,6 @@ int main(int argc, char *argv[]) {
         qCritical() << "This usually means the resource was not found (check qrc and CMakeLists.txt)";
         qCritical() << "or the QML file itself contains a syntax error.";
         
-        // Print import paths for debugging
         const auto importPaths = engine.importPathList();
         qCritical() << "Current QML import paths:";
         for (const auto &path : importPaths) {

@@ -10,10 +10,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Set the Qt installation path
 set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/mingw_64")
 
-# Find all required Qt packages
 find_package(Qt6 REQUIRED COMPONENTS 
     Core 
     Widgets 
@@ -27,7 +25,6 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 qt_policy(SET QTP0001 NEW)
 
-# Enable QML debugging and language server support
 set(QT_QMLLS_PLUGINS ON)
 
 # lupdateとlreleaseの実行可能ファイルパスを取得
@@ -134,7 +131,6 @@ target_link_libraries(ManageMySelf
         Qt::QuickLayouts
 )
 
-# Set QML import paths for the IDE
 if(Qt6_Qml_FOUND)
     get_target_property(QT_QML_IMPORT_PATH Qt6::Qml IMPORTED_LOCATION)
     get_filename_component(QT_QML_IMPORT_PATH "${QT_QML_IMPORT_PATH}/../../qml" ABSOLUTE)
