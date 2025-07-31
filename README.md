@@ -3,6 +3,8 @@
 If Mingw not exsist an 'libssp.a' file in Mingw.
 Please add the that file.
 
+If want compile the this project,Which need an Conan PackageManager.
+
 # How to use
 
 1. 
@@ -13,7 +15,9 @@ Please add the that file.
     - `cmake --build . --target run`
 
 
-# How to rebuild
+# How to clean a CmakeLists data
+
+Excute in `./build`
 
 - `Remove-Item * -Recurse -Force`
 
