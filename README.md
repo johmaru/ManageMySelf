@@ -21,7 +21,7 @@ Excute in `./build`
 
 - `Remove-Item * -Recurse -Force`
 
-If you not correct that path,Can change
+If you not valid that path,Can change
 - `$env:CC="C:/Qt/Tools/mingw1310_64/bin/gcc.exe"`
 
 - `$env:CXX="C:/Qt/Tools/mingw1310_64/bin/g++.exe"`
