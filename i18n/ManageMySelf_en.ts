@@ -234,28 +234,43 @@ Do you want to replace it?</source>
         <translation>Workspace Name</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="145"/>
+        <location filename="../control/gui/Main.qml" line="143"/>
+        <source>WorkspacePath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="157"/>
+        <source>Select workspace path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="169"/>
+        <source>Select Workspace Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="187"/>
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="153"/>
-        <location filename="../control/gui/Main.qml" line="172"/>
+        <location filename="../control/gui/Main.qml" line="196"/>
+        <location filename="../control/gui/Main.qml" line="215"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="166"/>
+        <location filename="../control/gui/Main.qml" line="209"/>
         <source>Open Workspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="193"/>
+        <location filename="../control/gui/Main.qml" line="236"/>
         <source>MessageDialogConfirmExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="199"/>
+        <location filename="../control/gui/Main.qml" line="242"/>
         <source>MessageDialogText</source>
         <translation>Are you really want quit?</translation>
     </message>

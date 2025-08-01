@@ -234,28 +234,43 @@ Do you want to replace it?</source>
         <translation>ワークスペース名</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="145"/>
+        <location filename="../control/gui/Main.qml" line="143"/>
+        <source>WorkspacePath</source>
+        <translation>ワークスペースパス</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="157"/>
+        <source>Select workspace path</source>
+        <translation>ワークスペースパスを選択</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="169"/>
+        <source>Select Workspace Folder</source>
+        <translation>ワークスペースフォルダーを選択</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="187"/>
         <source>Create</source>
         <translation>作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="153"/>
-        <location filename="../control/gui/Main.qml" line="172"/>
+        <location filename="../control/gui/Main.qml" line="196"/>
+        <location filename="../control/gui/Main.qml" line="215"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="166"/>
+        <location filename="../control/gui/Main.qml" line="209"/>
         <source>Open Workspace</source>
         <translation>ワークスペースを開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="193"/>
+        <location filename="../control/gui/Main.qml" line="236"/>
         <source>MessageDialogConfirmExit</source>
         <translation>終了する</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="199"/>
+        <location filename="../control/gui/Main.qml" line="242"/>
         <source>MessageDialogText</source>
         <translation>本当に終了しますか？</translation>
     </message>

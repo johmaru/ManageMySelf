@@ -135,6 +135,53 @@ ApplicationWindow {
                 anchors.topMargin: 20
             }
 
+            Label {
+                id: workspacePathLabel
+                anchors.top: workspaceNameTextField.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.topMargin: 10
+                text: qsTr("WorkspacePath")
+            }
+
+            RowLayout {
+                anchors.top: workspacePathLabel.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.topMargin: 10
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+
+                TextField {
+                    id: workspacePathTextField
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Select workspace path")
+                    readOnly: true
+                }
+
+                Button {
+                    text: "..."
+                    onClicked: folderDialog.open()
+                }
+            }
+
+            FolderDialog {
+                id: folderDialog
+                title: qsTr("Select Workspace Folder")
+                selectedFolder: workspacePathTextField.text
+                onAccepted: {
+                    var path = folderDialog.selectedFolder.toString();
+                    if (Qt.platform.os === "windows" && path.startsWith('/')) {
+                        path = path.substring(1)
+                    }
+
+                    if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
+                        path = path.substring(8) // Remove 'file:///' prefix
+                    }
+
+                    workspacePathTextField.text = path;
+                }
+            }
+
              RowLayout {
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -145,6 +192,7 @@ ApplicationWindow {
                     text: qsTr("Create")
                     onClicked: {
                         console.log("Create workspace: " + workspaceNameTextField.text)
+                        console.log("Workspace path: " + workspacePathTextField.text)
                         stackView.pop()
                     }
                 }
