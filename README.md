@@ -9,7 +9,7 @@ If want compile the this project,Which need an Conan PackageManager.
 
 1. 
     - changed a path in CMakeLists.txt for Qt folder
-    - realod CMake project
+    - reload CMake project
     - `cd build`
     - `conan install .. --output-folder=. --build=missing -s build_type=Debug`
     - `cmake --build . --target run`

@@ -11,7 +11,7 @@
 #include <QJsonDocument>
 
 
-const QString SETTINGS_DIR_NAME = "ManageMySelf";
+
 const QString SETTINGS_FILE_NAME = "settings.json";
 
 // 呼び出すと現在定義されている 'GlobalSettings'に値がセットされる。

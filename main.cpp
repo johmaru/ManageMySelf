@@ -15,6 +15,7 @@
 #include <QQmlComponent>
 #include <QQuickWindow>
 
+#include "fs/SqLiteBase.h"
 #include "fs/global_settings.h"
 
 int main(int argc, char *argv[]) {
@@ -42,7 +43,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    
+    SqLiteBase sqlite;
+
+    if (sqlite.checkMainDatabaseAndCreate() != 0) {
+        qWarning() << "Failed to check or create the main database.";
+        return -1; // Exit if the database cannot be created or checked
+    } else {
+        qInfo() << "Main database is ready.";
+    }
+
+
 
     QTranslator translator;
     QString locale = settings->getLanguage();

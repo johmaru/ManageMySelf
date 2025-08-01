@@ -42,6 +42,8 @@ signals:
 
 public:
 
+    inline static const QString SETTINGS_DIR_NAME = "ManageMySelf";
+
     [[nodiscard]] QJsonObject toJson() const override {
         QJsonObject json;
         json["language"] = m_language;

@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.31)
 project(ManageMySelf)
 
-# === ここから追加 ===
 # Qt MinGW環境でlibssp.aが見つからない問題への対策
 # スタック保護機能を明示的に無効化する
 if(CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options(-fno-stack-protector)
 endif()
-# === ここまで追加 ===
 
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
@@ -124,6 +122,7 @@ add_executable(ManageMySelf
         main.cpp
         fs/global_settings.cpp
         fs/JsonSettingsBase.cpp
+        fs/SqLiteBase.cpp
         ${I18N_RCC_OUTPUT}
 )
 
