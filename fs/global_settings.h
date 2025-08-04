@@ -12,6 +12,12 @@
 #include <QSize>
 #include <QObject>
 #include <QStringList>
+#include <qcoreapplication.h>
+#include <qdebug.h>
+#include <qqmlengine.h>
+#include <qtmetamacros.h>
+#include <qtranslator.h>
+#include <QQmlEngine>
 
 class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_OBJECT
@@ -19,6 +25,7 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_PROPERTY(int windowWidth READ getWindowWidth NOTIFY windowSizeChanged)
     Q_PROPERTY(int windowHeight READ getWindowHeight NOTIFY windowSizeChanged)
     Q_PROPERTY(QString theme READ getTheme WRITE setTheme NOTIFY themeChanged)
+    Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
 
 public slots:
     Q_INVOKABLE int createWorkspaceFromQml(const QString &name, const QString &path);
@@ -31,12 +38,58 @@ public:
     [[nodiscard]] QString getTheme() const {return m_theme;}
     [[nodiscard]] QString getLanguage() const {return m_language;}
 
-    void setTheme(const QString &newTheme)
+    void initialize(QQmlEngine *engine) {
+        m_engine = engine;
+        loadTranslation(m_language);
+    }
+
+    Q_INVOKABLE void setTheme(const QString &newTheme)
     {
         if (m_theme != newTheme)
         {
             m_theme = newTheme;
+
+            if (newTheme == "dark") {
+                qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", "Dark");
+            } else {
+                qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", "Light");
+            }
+
+            if (m_engine) {
+                m_engine->clearComponentCache();
+            }
+
+            QString filePath = this->getFilePath();
+            QFile saveFile(filePath);
+            if (!saveFile.open(QIODevice::WriteOnly)) {
+                qWarning() << "Couldn't open settings file for writing:" << filePath;
+                return;
+            }
+            saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+            saveFile.close();
+            
             emit themeChanged();
+        }
+    }
+
+    Q_INVOKABLE void setLanguage(const QString &newLanguage)
+    {
+        if (m_language != newLanguage)
+        {
+            m_language = newLanguage;
+
+            loadTranslation(m_language);
+
+            QString filePath = this->getFilePath();
+            QFile saveFile(filePath);
+            if (saveFile.open(QIODevice::WriteOnly)) {
+                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                saveFile.close();
+            } else {
+                qWarning() << "Couldn't open settings file for writing:" << filePath;
+            }
+
+            emit languageChanged();
         }
     }
 
@@ -45,6 +98,7 @@ public:
 signals:
     void windowSizeChanged();
     void themeChanged();
+    void languageChanged();
     void workspaceCreated(const QString &name, const QString &path, int result);
 
 public:
@@ -117,7 +171,35 @@ private:
     QString m_language;
     QSize m_windowSize;
     QString m_theme;
-};
+    QTranslator *m_translator = nullptr;
+    QQmlEngine *m_engine = nullptr;
 
+    void loadTranslation(const QString &language) {
+        if (m_translator) {
+            QCoreApplication::removeTranslator(m_translator);
+            delete m_translator;
+            m_translator = nullptr;
+        }
+
+        m_translator = new QTranslator(this);
+        QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(language);
+
+        if (QFile::exists(translationFile)) {
+            if (m_translator->load(translationFile)) {
+                QCoreApplication::installTranslator(m_translator);
+                qDebug() << "Loaded translation file:" << translationFile;
+
+                if (m_engine) {
+                    m_engine->retranslate();
+                }
+
+            } else {
+                qDebug() << "Failed to load translation file:" << translationFile;
+            }
+        } else {
+            qDebug() << "Translation file does not exist:" << translationFile;
+        }
+    }
+};
 
 #endif //MANAGEMYSELF_GLOBAL_SETTINGS_H

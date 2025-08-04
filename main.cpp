@@ -54,20 +54,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    QTranslator translator;
-    QString locale = settings->getLanguage();
-    QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(locale);
-
-    if (QFile::exists(":/i18n/ManageMySelf_" + locale + ".qm")) {
-        if (translator.load(translationFile)) {
-            a.installTranslator(&translator);
-            qDebug() << "Loaded translation file:" << translationFile;
-        } else {
-            qDebug() << "Failed to load translation file:" << translationFile;
-        }
-    } else {
-        qDebug() << "Translation file does not exist:" << translationFile;
-    }
+    settings->initialize(&engine);
 
     engine.rootContext()->setContextProperty("settings", settings);
 

@@ -248,36 +248,41 @@ Do you want to replace it?</source>
     </message>
     <message>
         <location filename="../control/gui/Main.qml" line="47"/>
+        <source>ToolBarSettings</source>
+        <translation>Settings</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="62"/>
         <source>ToolBarExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="80"/>
+        <location filename="../control/gui/Main.qml" line="95"/>
         <source>Text1</source>
         <translation>Test</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="91"/>
+        <location filename="../control/gui/Main.qml" line="106"/>
         <source>WorkspaceCreateNew</source>
         <translation>Create</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="91"/>
+        <location filename="../control/gui/Main.qml" line="106"/>
         <source>WorkSpaceOpen</source>
         <translation>Open</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="94"/>
+        <location filename="../control/gui/Main.qml" line="109"/>
         <source>WorkSpaceSelect</source>
         <translation>Select</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="182"/>
+        <location filename="../control/gui/Main.qml" line="221"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="189"/>
+        <location filename="../control/gui/Main.qml" line="228"/>
         <source>An error occurred</source>
         <translation type="unfinished"></translation>
     </message>
@@ -286,22 +291,22 @@ Do you want to replace it?</source>
         <translation type="vanished">Workspace Name</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="143"/>
+        <location filename="../control/gui/Main.qml" line="182"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="137"/>
+        <location filename="../control/gui/Main.qml" line="176"/>
         <source>Open Workspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="164"/>
+        <location filename="../control/gui/Main.qml" line="203"/>
         <source>MessageDialogConfirmExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="170"/>
+        <location filename="../control/gui/Main.qml" line="209"/>
         <source>MessageDialogText</source>
         <translation>Are you really want quit?</translation>
     </message>
@@ -334,6 +339,24 @@ Do you want to replace it?</source>
         <location filename="../cmake-build-debug-qt-mingw/qml/QtQuick/Dialogs/quickimpl/qml/+Universal/MessageDialog.qml" line="88"/>
         <location filename="../cmake-build-debug-qt-mingw/qml/QtQuick/Dialogs/quickimpl/qml/MessageDialog.qml" line="95"/>
         <source>Show Details...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Settings</name>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="23"/>
+        <source>Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="33"/>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="40"/>
+        <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

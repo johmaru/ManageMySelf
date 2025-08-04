@@ -44,6 +44,21 @@ ApplicationWindow {
                     y: parent.height
 
                     MenuItem {
+                        text: qsTr("ToolBarSettings")
+                        implicitWidth: 50
+                        implicitHeight: 30
+                        contentItem: Text {
+                            text: parent.text
+                            color: Material.foreground
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        onClicked: {
+                            stackView.push(settingsComponent);
+                        }
+                    }
+
+                    MenuItem {
                         text: qsTr("ToolBarExit")
                         implicitWidth: 100
                         implicitHeight: 30
@@ -94,6 +109,7 @@ ApplicationWindow {
                 displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
 
                 property bool isInitialized: false
+                property bool allowHanding: true
 
                 Component.onCompleted: {
                     isInitialized = true
@@ -101,11 +117,41 @@ ApplicationWindow {
 
                 onCurrentIndexChanged: {
 
+                    if (!allowHanding) {
+                        return;
+                    }
+
                     if (isInitialized && currentIndex !== -1) {
                         handleSelectionChange(currentIndex)
                         currentIndex = -1
                     }
                 }
+
+                Connections {
+                    target: settings
+                    function onLanguageChanged() {
+                        workspaceComboBox.allowHanding = false
+                        
+                        Qt.callLater(function () {
+                            workspaceComboBox.allowHanding = true
+                        })
+
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: settingsComponent
+
+        Settings {
+            onShowError: function(message) {
+                errorLabel.text = message;
+                errorDialog.open();
+            }
+            onBackRequested: function() {
+                stackView.pop();
             }
         }
     }
