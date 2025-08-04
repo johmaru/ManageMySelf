@@ -1,2 +1,3 @@
 module ManageMySelf.GUI
 Main 1.0 Main.qml
+CreateWorkspaceForm 1.0 CreateWorkspaceForm.qml

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
-import QtQuick.Dialogs
 
 /* global settings */
 
@@ -113,93 +112,27 @@ ApplicationWindow {
 
     Component {
         id: createWorkspaceComponent
-
-        Item {
-            Label {
-                id: createWorkspaceLabel
-                anchors.top: parent.top
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.topMargin: 20
-                font.pixelSize: 18
-                text: qsTr("WorkspaceName")
+        CreateWorkspaceForm {
+            onShowError: function(message) {
+                errorLabel.text = message;
+                errorDialog.open();
             }
-
-            TextField {
-                id: workspaceNameTextField
-
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: createWorkspaceLabel.bottom
-                anchors.leftMargin: 12
-                anchors.rightMargin: 12
-                anchors.topMargin: 20
+            onBackRequested: function() {
+                stackView.pop();
             }
+            onWorkspaceCreated: function(name, path) {
+                
+                let result = settings.createWorkspaceFromQml(name, path);
 
-            Label {
-                id: workspacePathLabel
-                anchors.top: workspaceNameTextField.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.topMargin: 10
-                text: qsTr("WorkspacePath")
-            }
-
-            RowLayout {
-                anchors.top: workspacePathLabel.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.topMargin: 10
-                anchors.leftMargin: 12
-                anchors.rightMargin: 12
-
-                TextField {
-                    id: workspacePathTextField
-                    Layout.fillWidth: true
-                    placeholderText: qsTr("Select workspace path")
-                    readOnly: true
-                }
-
-                Button {
-                    text: "..."
-                    onClicked: folderDialog.open()
-                }
-            }
-
-            FolderDialog {
-                id: folderDialog
-                title: qsTr("Select Workspace Folder")
-                selectedFolder: workspacePathTextField.text
-                onAccepted: {
-                    var path = folderDialog.selectedFolder.toString();
-                    if (Qt.platform.os === "windows" && path.startsWith('/')) {
-                        path = path.substring(1)
-                    }
-
-                    if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
-                        path = path.substring(8) // Remove 'file:///' prefix
-                    }
-
-                    workspacePathTextField.text = path;
-                }
-            }
-
-             RowLayout {
-                anchors.bottom: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottomMargin: 20
-                spacing: 10
-
-                Button {
-                    text: qsTr("Create")
-                    onClicked: {
-                        console.log("Create workspace: " + workspaceNameTextField.text)
-                        console.log("Workspace path: " + workspacePathTextField.text)
-                        stackView.pop()
-                    }
-                }
-
-                Button {
-                    text: qsTr("Back")
-                    onClicked: stackView.pop()
+                if (result === 0) {
+                    console.log("Workspace created successfully");
+                    stackView.pop();
+                } else if (result === 1) {
+                    errorLabel.text = "Exist an Folder";
+                    errorDialog.open();
+                } else {
+                    errorLabel.text = "Failed to create workspace";
+                    errorDialog.open();
                 }
             }
         }
@@ -226,7 +159,7 @@ ApplicationWindow {
     function handleSelectionChange(index) {
         switch (index) {
             case 0:
-                stackView.push(createWorkspaceComponent)
+                stackView.push(createWorkspaceComponent);
                 break
             case 1:
                 stackView.push(openWorkspaceComponent)
@@ -251,6 +184,24 @@ ApplicationWindow {
         onAccepted: {
             forceClose = true;
             root.close();
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        title: qsTr("Error")
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: parent
+
+        Label {
+            id: errorLabel
+            text: qsTr("An error occurred")
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        onAccepted: {
+            // Handle error dialog acceptance if needed
         }
     }
 }

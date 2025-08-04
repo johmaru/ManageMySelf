@@ -2,5 +2,7 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file alias="Main.qml">control/gui/Main.qml</file>
+        <file alias="CreateWorkspaceForm.qml">control/gui/CreateWorkspaceForm.qml</file>
+        <file alias="qmldir">control/gui/qmldir</file>
     </qresource>
 </RCC>

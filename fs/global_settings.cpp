@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QWidget>
 #include <QJsonDocument>
+#include <qcontainerfwd.h>
 
 
 
@@ -39,4 +40,48 @@ QString GlobalSettings::getFilePath() const {
     qInfo() << "Setting Path : " << filePath;
 
     return filePath;
+}
+
+int GlobalSettings::createWorkspaceFromQml(const QString &name, const QString &path) {
+    if (name.isEmpty()) {
+        qWarning() << "Workspace name cannot be empty";
+        return -1;
+    }
+    
+    if (path.isEmpty()) {
+        qWarning() << "Workspace path cannot be empty";
+        return -1;
+    }
+    
+    QStringList items;
+    items << name << path;
+    
+    int result = createWorkspace(items);
+    
+    emit workspaceCreated(name, path, result);
+    
+    return result;
+}
+
+int GlobalSettings::createWorkspace(const QStringList &items) const {
+    if (items.size() < 2) {
+        qWarning() << "Insufficient arguments for workspace creation. Expected: name, path";
+        return -1;
+    }
+    
+    const QString workspaceName = items.at(0);
+    const QString workspacePath = items.at(1);
+    
+    qInfo() << "Creating workspace:" << workspaceName << "at" << workspacePath;
+    
+
+    QString fullPath = QDir(workspacePath).filePath(workspaceName);
+
+    if (!QDir().mkpath(fullPath)) {
+        qWarning() << "Failed to create workspace directory:" << fullPath;
+        return -1;
+    }
+    
+    qInfo() << "Workspace created successfully at:" << fullPath;
+    return 0;
 }

@@ -11,6 +11,7 @@
 #include <QString>
 #include <QSize>
 #include <QObject>
+#include <QStringList>
 
 class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_OBJECT
@@ -18,6 +19,9 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_PROPERTY(int windowWidth READ getWindowWidth NOTIFY windowSizeChanged)
     Q_PROPERTY(int windowHeight READ getWindowHeight NOTIFY windowSizeChanged)
     Q_PROPERTY(QString theme READ getTheme WRITE setTheme NOTIFY themeChanged)
+
+public slots:
+    Q_INVOKABLE int createWorkspaceFromQml(const QString &name, const QString &path);
 
 public:
     explicit GlobalSettings(QObject *parent = nullptr) : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light") {}
@@ -36,9 +40,12 @@ public:
         }
     }
 
+    int createWorkspace(const QStringList &items) const;
+
 signals:
     void windowSizeChanged();
     void themeChanged();
+    void workspaceCreated(const QString &name, const QString &path, int result);
 
 public:
 

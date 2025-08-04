@@ -78,6 +78,49 @@
     </message>
 </context>
 <context>
+    <name>CreateWorkspaceForm</name>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="25"/>
+        <source>WorkspaceName</source>
+        <translation type="unfinished">Workspace Name</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="44"/>
+        <source>WorkspacePath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="58"/>
+        <source>Select workspace path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="70"/>
+        <source>Select Workspace Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="90"/>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="93"/>
+        <source>Workspace name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="97"/>
+        <source>Workspace path cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="105"/>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>FileDialog</name>
     <message>
         <location filename="../build/qml/QtQuick/Dialogs/quickimpl/qml/+Fusion/FileDialog.qml" line="40"/>
@@ -194,83 +237,71 @@ Do you want to replace it?</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../control/gui/Main.qml" line="24"/>
+        <location filename="../control/gui/Main.qml" line="23"/>
         <source>TitleMain</source>
         <translation>Main -- ManageMySelf</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="41"/>
+        <location filename="../control/gui/Main.qml" line="40"/>
         <source>ToolBarFile</source>
         <translation>File</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="48"/>
+        <location filename="../control/gui/Main.qml" line="47"/>
         <source>ToolBarExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="81"/>
+        <location filename="../control/gui/Main.qml" line="80"/>
         <source>Text1</source>
         <translation>Test</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="92"/>
+        <location filename="../control/gui/Main.qml" line="91"/>
         <source>WorkspaceCreateNew</source>
         <translation>Create</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="92"/>
+        <location filename="../control/gui/Main.qml" line="91"/>
         <source>WorkSpaceOpen</source>
         <translation>Open</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="95"/>
+        <location filename="../control/gui/Main.qml" line="94"/>
         <source>WorkSpaceSelect</source>
         <translation>Select</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="124"/>
+        <location filename="../control/gui/Main.qml" line="182"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="189"/>
+        <source>An error occurred</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>WorkspaceName</source>
-        <translation>Workspace Name</translation>
+        <translation type="vanished">Workspace Name</translation>
     </message>
     <message>
         <location filename="../control/gui/Main.qml" line="143"/>
-        <source>WorkspacePath</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../control/gui/Main.qml" line="157"/>
-        <source>Select workspace path</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../control/gui/Main.qml" line="169"/>
-        <source>Select Workspace Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../control/gui/Main.qml" line="187"/>
-        <source>Create</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../control/gui/Main.qml" line="196"/>
-        <location filename="../control/gui/Main.qml" line="215"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="209"/>
+        <location filename="../control/gui/Main.qml" line="137"/>
         <source>Open Workspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="236"/>
+        <location filename="../control/gui/Main.qml" line="164"/>
         <source>MessageDialogConfirmExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="242"/>
+        <location filename="../control/gui/Main.qml" line="170"/>
         <source>MessageDialogText</source>
         <translation>Are you really want quit?</translation>
     </message>
