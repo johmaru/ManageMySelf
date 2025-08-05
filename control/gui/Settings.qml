@@ -9,6 +9,7 @@ Page {
 
     signal showError(string message)
     signal backRequested()
+    signal saveAndRequestBack()
 
     background: Rectangle {
         color: Material.background
@@ -105,31 +106,21 @@ Page {
         Button {
             text: qsTr("Save")
             onClicked: {
-                enabled = false
-                console.log("Save button clicked")
-                
                 if (themeComboBox.currentIndex === 0) {
-                    console.log("Setting theme to light")
                     settings.setTheme("light")
-                } else if (themeComboBox.currentIndex === 1) {
-                    console.log("Setting theme to dark")
+                } else {
                     settings.setTheme("dark")
                 }
 
                 if (languageComboBox.currentIndex === 0) {
-                    console.log("Setting language to ja")
                     settings.setLanguage("ja")
-                } else if (languageComboBox.currentIndex === 1) {
-                    console.log("Setting language to en")
+                } else {
                     settings.setLanguage("en")
                 }
                 
-                console.log("Save completed")
-                Qt.callLater(function () {
-                    enabled = true
-                })
+                settingsPage.saveAndRequestBack()
+            }
         }
-    }
 
         Button {
             text: qsTr("Back")

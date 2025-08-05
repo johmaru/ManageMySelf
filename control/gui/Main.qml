@@ -108,35 +108,9 @@ ApplicationWindow {
                 currentIndex: -1
                 displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
 
-                property bool isInitialized: false
-                property bool allowHanding: true
-
-                Component.onCompleted: {
-                    isInitialized = true
-                }
-
-                onCurrentIndexChanged: {
-
-                    if (!allowHanding) {
-                        return;
-                    }
-
-                    if (isInitialized && currentIndex !== -1) {
-                        handleSelectionChange(currentIndex)
-                        currentIndex = -1
-                    }
-                }
-
-                Connections {
-                    target: settings
-                    function onLanguageChanged() {
-                        workspaceComboBox.allowHanding = false
-                        
-                        Qt.callLater(function () {
-                            workspaceComboBox.allowHanding = true
-                        })
-
-                    }
+                onActivated: {
+                    handleSelectionChange(index)
+                    currentIndex = -1
                 }
             }
         }
@@ -151,6 +125,9 @@ ApplicationWindow {
                 errorDialog.open();
             }
             onBackRequested: function() {
+                stackView.pop();
+            }
+            onSaveAndRequestBack: function() {
                 stackView.pop();
             }
         }
