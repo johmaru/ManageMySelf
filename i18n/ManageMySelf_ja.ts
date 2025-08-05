@@ -237,54 +237,64 @@ Do you want to replace it?</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../control/gui/Main.qml" line="23"/>
+        <location filename="../control/gui/Main.qml" line="24"/>
         <source>TitleMain</source>
         <translation>メイン -- ManageMySelf</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="40"/>
+        <location filename="../control/gui/Main.qml" line="41"/>
         <source>ToolBarFile</source>
         <translation>ファイル</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="47"/>
+        <location filename="../control/gui/Main.qml" line="48"/>
         <source>ToolBarSettings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="62"/>
+        <location filename="../control/gui/Main.qml" line="63"/>
         <source>ToolBarExit</source>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="95"/>
+        <location filename="../control/gui/Main.qml" line="96"/>
         <source>Text1</source>
         <translation>テスト</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="106"/>
+        <location filename="../control/gui/Main.qml" line="107"/>
         <source>WorkspaceCreateNew</source>
         <translation>新規作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="106"/>
+        <location filename="../control/gui/Main.qml" line="107"/>
         <source>WorkSpaceOpen</source>
         <translation>オープン</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="109"/>
+        <location filename="../control/gui/Main.qml" line="110"/>
         <source>WorkSpaceSelect</source>
         <translation>選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="221"/>
-        <source>Error</source>
-        <translation type="unfinished"></translation>
+        <location filename="../control/gui/Main.qml" line="207"/>
+        <source>Open</source>
+        <translation>開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="228"/>
+        <location filename="../control/gui/Main.qml" line="225"/>
+        <source>Open to Folder</source>
+        <translation>フォルダーを開く</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="288"/>
+        <source>Error</source>
+        <translation>エラー</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="295"/>
         <source>An error occurred</source>
-        <translation type="unfinished"></translation>
+        <translation>エラーが発生しました</translation>
     </message>
     <message>
         <source>WorkspaceName</source>
@@ -299,30 +309,31 @@ Do you want to replace it?</source>
         <translation type="vanished">ワークスペースパスを選択</translation>
     </message>
     <message>
+        <location filename="../control/gui/Main.qml" line="233"/>
         <source>Select Workspace Folder</source>
-        <translation type="vanished">ワークスペースフォルダーを選択</translation>
+        <translation>ワークスペースフォルダーを選択</translation>
     </message>
     <message>
         <source>Create</source>
         <translation type="vanished">作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="182"/>
+        <location filename="../control/gui/Main.qml" line="247"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="176"/>
+        <location filename="../control/gui/Main.qml" line="178"/>
         <source>Open Workspace</source>
         <translation>ワークスペースを開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="203"/>
+        <location filename="../control/gui/Main.qml" line="270"/>
         <source>MessageDialogConfirmExit</source>
         <translation>終了する</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="209"/>
+        <location filename="../control/gui/Main.qml" line="276"/>
         <source>MessageDialogText</source>
         <translation>本当に終了しますか？</translation>
     </message>
@@ -361,17 +372,47 @@ Do you want to replace it?</source>
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../control/gui/Settings.qml" line="23"/>
+        <location filename="../control/gui/Settings.qml" line="24"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="33"/>
+        <location filename="../control/gui/Settings.qml" line="39"/>
+        <source>General</source>
+        <translation>一般</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="42"/>
+        <source>Appearance</source>
+        <translation>外観</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="64"/>
+        <source>Language</source>
+        <translation>言語</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="86"/>
+        <source>Theme</source>
+        <translation>テーマ</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="91"/>
+        <source>Light</source>
+        <translation>ライト</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="91"/>
+        <source>Dark</source>
+        <translation>ダーク</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="107"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="40"/>
+        <location filename="../control/gui/Settings.qml" line="126"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>

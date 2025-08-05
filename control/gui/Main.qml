@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import QtQuick.Controls.Material
 
 /* global settings */
@@ -108,7 +109,7 @@ ApplicationWindow {
                 currentIndex: -1
                 displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
 
-                onActivated: {
+                onActivated: function(index) {
                     handleSelectionChange(index)
                     currentIndex = -1
                 }
@@ -150,7 +151,7 @@ ApplicationWindow {
                 if (result === 0) {
                     console.log("Workspace created successfully");
                     stackView.pop();
-                } else if (result === 1) {
+                } else if (result === -1) {
                     errorLabel.text = "Exist an Folder";
                     errorDialog.open();
                 } else {
@@ -165,16 +166,88 @@ ApplicationWindow {
         id: openWorkspaceComponent
 
         Item {
-            Label {
-                anchors.centerIn: parent
-                text: qsTr("Open Workspace")
-            }
+            property var workspaceModel: settings.getWorkspaces()
 
-            Button {
-                anchors.bottom: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Back")
-                onClicked: stackView.pop()
+            ColumnLayout{
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+
+                Label {
+                    text: qsTr("Open Workspace")
+                    font.pixelSize: 20
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                ScrollView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+
+                    ListView {
+                        id: workspaceListView
+                        model: workspaceModel
+                        spacing: 5
+                        delegate: Item {
+                            width: parent.width
+                            height: 40
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: 10
+
+                                Label {
+                                    text: modelData
+                                    Layout.fillWidth: true
+                                    verticalAlignment: Label.AlignVCenter
+                                }
+
+                                Button {
+                                    text: qsTr("Open")
+                                    onClicked: {
+                                       let workspace = settings.getWorkspaceWithName(modelData);
+                                        console.log("Opening workspace:", workspace[1]);
+                                        stackView.pop();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 10
+
+                    Button {
+                        text: qsTr("Open to Folder")
+                        onClicked: {
+                            folderDialog.open();
+                        }
+                    }
+
+                    FolderDialog {
+                        id: folderDialog
+                        title: qsTr("Select Workspace Folder")
+                        onAccepted: {
+                            var path = folderDialog.selectedFolder.toString();
+                            if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
+                                path = path.substring(8);
+                            }
+                            if (Qt.platform.os === "windows" && path.startsWith('/')) {
+                                path = path.substring(1);
+                            }
+                            console.log("Selected folder path:", path);
+                        }
+                    }
+
+                    Button {
+                        text: qsTr("Back")
+                        onClicked: stackView.pop()
+                    }
+                }
             }
         }
     }

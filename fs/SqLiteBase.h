@@ -23,6 +23,17 @@ public:
 
     // Method to retrieve a list of recent files from the database
     QStringList getRecentFiles(int limit = 10) const;
+
+    int ExistCheckWorkspaceAtName(const QString &name) const;
+
+    QStringList getWorkspaces() const;
+
+    // Method to get a workspace by its name
+    // QStringlist in 0 index is the name, 1 index is the path
+    QStringList getWorkspaceWithName(const QString &name) const;
+
+    // Method to add a workspace to the database
+    int addWorkspace(const QString &name, const QString &path) const;
 };
 
 #endif // MANAGEMYSELF_SQLITEBASE_H

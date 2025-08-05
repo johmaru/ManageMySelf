@@ -237,52 +237,67 @@ Do you want to replace it?</source>
 <context>
     <name>Main</name>
     <message>
-        <location filename="../control/gui/Main.qml" line="23"/>
+        <location filename="../control/gui/Main.qml" line="24"/>
         <source>TitleMain</source>
         <translation>Main -- ManageMySelf</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="40"/>
+        <location filename="../control/gui/Main.qml" line="41"/>
         <source>ToolBarFile</source>
         <translation>File</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="47"/>
+        <location filename="../control/gui/Main.qml" line="48"/>
         <source>ToolBarSettings</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="62"/>
+        <location filename="../control/gui/Main.qml" line="63"/>
         <source>ToolBarExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="95"/>
+        <location filename="../control/gui/Main.qml" line="96"/>
         <source>Text1</source>
         <translation>Test</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="106"/>
+        <location filename="../control/gui/Main.qml" line="107"/>
         <source>WorkspaceCreateNew</source>
         <translation>Create</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="106"/>
+        <location filename="../control/gui/Main.qml" line="107"/>
         <source>WorkSpaceOpen</source>
         <translation>Open</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="109"/>
+        <location filename="../control/gui/Main.qml" line="110"/>
         <source>WorkSpaceSelect</source>
         <translation>Select</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="221"/>
+        <location filename="../control/gui/Main.qml" line="207"/>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="225"/>
+        <source>Open to Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="233"/>
+        <source>Select Workspace Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="288"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="228"/>
+        <location filename="../control/gui/Main.qml" line="295"/>
         <source>An error occurred</source>
         <translation type="unfinished"></translation>
     </message>
@@ -291,22 +306,22 @@ Do you want to replace it?</source>
         <translation type="vanished">Workspace Name</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="182"/>
+        <location filename="../control/gui/Main.qml" line="247"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="176"/>
+        <location filename="../control/gui/Main.qml" line="178"/>
         <source>Open Workspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="203"/>
+        <location filename="../control/gui/Main.qml" line="270"/>
         <source>MessageDialogConfirmExit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="209"/>
+        <location filename="../control/gui/Main.qml" line="276"/>
         <source>MessageDialogText</source>
         <translation>Are you really want quit?</translation>
     </message>
@@ -345,17 +360,47 @@ Do you want to replace it?</source>
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../control/gui/Settings.qml" line="23"/>
+        <location filename="../control/gui/Settings.qml" line="24"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="33"/>
+        <location filename="../control/gui/Settings.qml" line="39"/>
+        <source>General</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="42"/>
+        <source>Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="64"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="86"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="91"/>
+        <source>Light</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="91"/>
+        <source>Dark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Settings.qml" line="107"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="40"/>
+        <location filename="../control/gui/Settings.qml" line="126"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>

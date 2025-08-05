@@ -12,6 +12,7 @@
 #include <QSize>
 #include <QObject>
 #include <QStringList>
+#include <qcontainerfwd.h>
 #include <qcoreapplication.h>
 #include <qdebug.h>
 #include <qqmlengine.h>
@@ -29,6 +30,7 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
 
 public slots:
     Q_INVOKABLE int createWorkspaceFromQml(const QString &name, const QString &path);
+    Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
 
 public:
     explicit GlobalSettings(QObject *parent = nullptr) : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light") {}
@@ -42,6 +44,8 @@ public:
         m_engine = engine;
         loadTranslation(m_language);
     }
+
+    Q_INVOKABLE QStringList getWorkspaces() const;
 
     Q_INVOKABLE void setTheme(const QString &newTheme)
     {

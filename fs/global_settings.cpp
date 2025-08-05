@@ -3,6 +3,7 @@
 //
 
 #include "../fs/global_settings.h"
+#include "SqLiteBase.h"
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -40,6 +41,16 @@ QString GlobalSettings::getFilePath() const {
     qInfo() << "Setting Path : " << filePath;
 
     return filePath;
+}
+
+QStringList GlobalSettings::getWorkspaces() const {
+    SqLiteBase sqlite;
+    return sqlite.getWorkspaces();
+}
+
+QStringList GlobalSettings::getWorkspaceWithName(const QString &name) const {
+    SqLiteBase sqlite;
+    return sqlite.getWorkspaceWithName(name);
 }
 
 int GlobalSettings::createWorkspaceFromQml(const QString &name, const QString &path) {
@@ -83,5 +94,24 @@ int GlobalSettings::createWorkspace(const QStringList &items) const {
     }
     
     qInfo() << "Workspace created successfully at:" << fullPath;
+
+    SqLiteBase db;
+
+    int exists = db.ExistCheckWorkspaceAtName(workspaceName);
+    if (exists > 0) {
+        qWarning() << "Workspace with name" << workspaceName << "already exists.";
+        return -2; // Workspace already exists
+    } else if (exists < 0) {
+        qWarning() << "Error checking workspace existence:" << exists;
+        return -3; // Error checking existence
+    }
+
+    int result = db.addWorkspace(workspaceName, fullPath);
+    if (result == 0) {
+        qInfo() << "Workspace added to database successfully.";
+    } else {
+        qWarning() << "Failed to add workspace to database. Error code:" << result;
+    }
+
     return 0;
 }
