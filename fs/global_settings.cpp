@@ -4,6 +4,7 @@
 
 #include "../fs/global_settings.h"
 #include "SqLiteBase.h"
+#include "UserSql.h"
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -53,7 +54,7 @@ QStringList GlobalSettings::getWorkspaceWithName(const QString &name) const {
     return sqlite.getWorkspaceWithName(name);
 }
 
-int GlobalSettings::createWorkspaceFromQml(const QString &name, const QString &path) {
+int GlobalSettings::createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path) {
     if (name.isEmpty()) {
         qWarning() << "Workspace name cannot be empty";
         return -1;
@@ -65,23 +66,24 @@ int GlobalSettings::createWorkspaceFromQml(const QString &name, const QString &p
     }
     
     QStringList items;
-    items << name << path;
-    
+    items << userName << name << path;
+
     int result = createWorkspace(items);
-    
-    emit workspaceCreated(name, path, result);
-    
+
+    emit workspaceCreated(userName, name, path, result);
+
     return result;
 }
 
 int GlobalSettings::createWorkspace(const QStringList &items) const {
-    if (items.size() < 2) {
-        qWarning() << "Insufficient arguments for workspace creation. Expected: name, path";
+    if (items.size() < 3) {
+        qWarning() << "Insufficient arguments for workspace creation. Expected: userName, name, path";
         return -1;
     }
-    
-    const QString workspaceName = items.at(0);
-    const QString workspacePath = items.at(1);
+
+    const QString userName = items.at(0);
+    const QString workspaceName = items.at(1);
+    const QString workspacePath = items.at(2);
     
     qInfo() << "Creating workspace:" << workspaceName << "at" << workspacePath;
     
@@ -92,7 +94,30 @@ int GlobalSettings::createWorkspace(const QStringList &items) const {
         qWarning() << "Failed to create workspace directory:" << fullPath;
         return -1;
     }
+
+    QString dbPath = QDir(fullPath).filePath("user.db");
+
+    UserSql userSql(dbPath);
+    int resultCreateUserDb = userSql.createUserDatabase(fullPath);
+    if (resultCreateUserDb != 0) {
+        qWarning() << "Failed to create user database at:" << fullPath << "Error code:" << resultCreateUserDb;
+        return resultCreateUserDb; // エラーコードを返す
+    } else {
+        qInfo() << "User database created successfully at:" << fullPath;
+    }
+
+    // ここで設定を作成 & 保存
+
+    QJsonObject settingsJson;
+    settingsJson["userName"] = userName;
     
+    GlobalSettings settings;
+    if (!settings.saveToFileAny(QDir(fullPath).filePath("settings.json"), settingsJson)) {
+        qWarning() << "Failed to create settings file at:" << QDir(fullPath).filePath("settings.json");
+    } else {
+        qInfo() << "Settings file created at:" << QDir(fullPath).filePath("settings.json");
+    }
+
     qInfo() << "Workspace created successfully at:" << fullPath;
 
     SqLiteBase db;
@@ -114,4 +139,56 @@ int GlobalSettings::createWorkspace(const QStringList &items) const {
     }
 
     return 0;
+}
+
+int GlobalSettings::openWorkspace(const QString &path) const {
+    if (path.isEmpty()) {
+        qWarning() << "Workspace path cannot be empty";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    SqLiteBase db;
+    int exists = db.ExistCheckWorkspaceAtPath(path);
+    if (exists > 0) {
+        qInfo() << "Workspace exists at path:" << path;
+
+        QString user_db_path = UserSql::getUserDatabasePath(path);
+        if (user_db_path.isEmpty()) {
+            qWarning() << "Failed to get user database path for workspace at:" << path;
+            return -4; // ユーザーデータベースパスが取得できない場合のエラーコード
+        } 
+        return 0; // 成功
+    } else if (exists < 0) {
+        qWarning() << "Error checking workspace existence:" << exists;
+        return -2; // 存在チェックのエラーコード
+    }
+
+    qWarning() << "No workspace found at path:" << path;
+    return -3; // ワークスペースが存在しない場合のエラーコード
+}
+
+QStringList GlobalSettings::getSettings(const QString &path) const {
+    if (path.isEmpty()) {
+        qWarning() << "Path is empty. Cannot get settings.";
+        return QStringList(); // パスが空の場合は空のリストを返す
+    }
+
+    QDir dir(path);
+    QString settingsFilePath = dir.filePath("settings.json");
+
+    if (!QFile::exists(settingsFilePath)) {
+        qWarning() << "Settings file does not exist at path:" << settingsFilePath;
+        return QStringList(); // 設定ファイルが存在しない場合は空のリストを返す
+    }
+
+    QJsonObject json = JsonSettingsBase::loadFromFileAny(settingsFilePath);
+    if (json.isEmpty()) {
+        qWarning() << "Failed to load settings from file:" << settingsFilePath;
+        return QStringList(); // 設定の読み込みに失敗した場合は空のリストを返す
+    }
+
+    QStringList settings;
+    settings << json["userName"].toString();
+
+    return settings;
 }

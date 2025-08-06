@@ -79,11 +79,13 @@ Page {
                     contentWidth: availableWidth
 
                     Column {
+                        padding: 10
                         width: parent.width
                         spacing: 10
 
                         Label {
                             text: qsTr("Theme")
+                            font.pixelSize: 16
                         }
                         ComboBox {
                             id: themeComboBox

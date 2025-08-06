@@ -123,6 +123,8 @@ add_executable(ManageMySelf
         fs/global_settings.cpp
         fs/JsonSettingsBase.cpp
         fs/SqLiteBase.cpp
+        fs/UserSql.cpp
+        os/SqlOS.cpp
         ${I18N_RCC_OUTPUT}
 )
 

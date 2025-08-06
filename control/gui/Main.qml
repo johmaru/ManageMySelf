@@ -32,52 +32,8 @@ ApplicationWindow {
         exitDialog.open();
     }
 
-    header: ToolBar {
-        RowLayout {
-            anchors.fill : parent
-            spacing: 10
-
-            ToolButton {
-                text: qsTr("ToolBarFile")
-
-                Menu {
-                    id: fileMenu
-                    y: parent.height
-
-                    MenuItem {
-                        text: qsTr("ToolBarSettings")
-                        implicitWidth: 50
-                        implicitHeight: 30
-                        contentItem: Text {
-                            text: parent.text
-                            color: Material.foreground
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: {
-                            stackView.push(settingsComponent);
-                        }
-                    }
-
-                    MenuItem {
-                        text: qsTr("ToolBarExit")
-                        implicitWidth: 100
-                        implicitHeight: 30
-                        contentItem: Text {
-                            text: parent.text
-                            color: Material.foreground
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: {
-                            root.close();
-                        }
-                    }
-                }
-
-                onClicked: fileMenu.open()
-            }
-        }
+    header: Loader {
+        sourceComponent: stackView.currentItem ? stackView.currentItem.headerComponent : undefined
     }
 
     StackView {
@@ -90,6 +46,54 @@ ApplicationWindow {
         id: mainContent
 
         Item {
+            property Component headerComponent: ToolBar {
+                RowLayout {
+                    anchors.fill : parent
+                    spacing: 10
+
+                    ToolButton {
+                        text: qsTr("ToolBarFile")
+
+                        Menu {
+                            id: fileMenu
+                            y: parent.height
+
+                            MenuItem {
+                                text: qsTr("ToolBarSettings")
+                                implicitWidth: 50
+                                implicitHeight: 30
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: Material.foreground
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    stackView.push(settingsComponent);
+                                }
+                            }
+
+                            MenuItem {
+                                text: qsTr("ToolBarExit")
+                                implicitWidth: 100
+                                implicitHeight: 30
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: Material.foreground
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    root.close();
+                                }
+                            }
+                        }
+
+                        onClicked: fileMenu.open()
+                    }
+                }
+            }
+
             Label {
                 anchors.centerIn: parent
 
@@ -144,9 +148,9 @@ ApplicationWindow {
             onBackRequested: function() {
                 stackView.pop();
             }
-            onWorkspaceCreated: function(name, path) {
+            onWorkspaceCreated: function(userName,name, path) {
                 
-                let result = settings.createWorkspaceFromQml(name, path);
+                let result = settings.createWorkspaceFromQml(userName,name, path);
 
                 if (result === 0) {
                     console.log("Workspace created successfully");
@@ -157,6 +161,29 @@ ApplicationWindow {
                 } else {
                     errorLabel.text = "Failed to create workspace";
                     errorDialog.open();
+                }
+            }
+        }
+    }
+
+    Component {
+        id: mainUserPageComponent
+
+        MainUserPage {
+            id: mainUserPageInstance
+            onShowError: function(message) {
+                errorLabel.text = message;
+                errorDialog.open();
+            }
+            onBackRequested: function() {
+                stackView.pop();
+            }
+            onRequestGetUserName: function(path) {
+                let userName = settings.getSettings(path);
+                if (userName.length > 0) {
+                    mainUserPageInstance.userName = userName[0];
+                } else {
+                    mainUserPageInstance.userName = "Unknown";
                 }
             }
         }
@@ -208,7 +235,7 @@ ApplicationWindow {
                                     onClicked: {
                                        let workspace = settings.getWorkspaceWithName(modelData);
                                         console.log("Opening workspace:", workspace[1]);
-                                        stackView.pop();
+                                        stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
                                     }
                                 }
                             }
@@ -222,7 +249,7 @@ ApplicationWindow {
                     spacing: 10
 
                     Button {
-                        text: qsTr("Open to Folder")
+                        text: qsTr("Open from Folder")
                         onClicked: {
                             folderDialog.open();
                         }

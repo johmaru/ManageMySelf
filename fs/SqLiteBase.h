@@ -26,6 +26,8 @@ public:
 
     int ExistCheckWorkspaceAtName(const QString &name) const;
 
+    int ExistCheckWorkspaceAtPath(const QString &path) const;
+
     QStringList getWorkspaces() const;
 
     // Method to get a workspace by its name

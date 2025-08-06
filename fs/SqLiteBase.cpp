@@ -112,6 +112,28 @@ int SqLiteBase::ExistCheckWorkspaceAtName(const QString &name) const {
     return -2; // エラーコード
 }
 
+int SqLiteBase::ExistCheckWorkspaceAtPath(const QString &path) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot check workspace existence.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READONLY);
+        SQLite::Statement query(db, "SELECT COUNT(*) FROM workspaces WHERE path = ?");
+        query.bind(1, path.toStdString());
+        
+        if (query.executeStep()) {
+            return query.getColumn(0).getInt(); // 存在する場合は1、存在しない場合は0
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while checking workspace existence:" << e.what();
+    }
+
+    return -2; // エラーコード
+}
+
 int SqLiteBase::addWorkspace(const QString &name, const QString &path) const {
     QString dbPath = getMainDatabasePath();
     if (dbPath.isEmpty()) {

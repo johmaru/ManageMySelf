@@ -81,41 +81,56 @@
     <name>CreateWorkspaceForm</name>
     <message>
         <location filename="../control/gui/CreateWorkspaceForm.qml" line="25"/>
+        <source>UserName</source>
+        <translation>ユーザー名</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="36"/>
+        <source>Enter your name</source>
+        <translation>名前を入力してください</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="45"/>
         <source>WorkspaceName</source>
         <translation>ワークスペース名</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="44"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="64"/>
         <source>WorkspacePath</source>
         <translation>ワークスペースパス</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="58"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="78"/>
         <source>Select workspace path</source>
         <translation>ワークスペースパスを選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="70"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="90"/>
         <source>Select Workspace Folder</source>
         <translation>ワークスペースフォルダーを選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="90"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="110"/>
         <source>Create</source>
         <translation>作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="93"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="113"/>
+        <source>User name cannot be empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="118"/>
         <source>Workspace name cannot be empty</source>
         <translation>ワークスペース名は空にできません</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="97"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="122"/>
         <source>Workspace path cannot be empty</source>
         <translation>ワークスペースパスは空にできません</translation>
     </message>
     <message>
-        <location filename="../control/gui/CreateWorkspaceForm.qml" line="105"/>
+        <location filename="../control/gui/CreateWorkspaceForm.qml" line="130"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
@@ -277,22 +292,26 @@ Do you want to replace it?</source>
         <translation>選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="207"/>
+        <location filename="../control/gui/Main.qml" line="218"/>
         <source>Open</source>
         <translation>開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="225"/>
-        <source>Open to Folder</source>
-        <translation>フォルダーを開く</translation>
+        <location filename="../control/gui/Main.qml" line="236"/>
+        <source>Open from Folder</source>
+        <translation>フォルダーから開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="288"/>
+        <source>Open to Folder</source>
+        <translation type="vanished">フォルダーを開く</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="299"/>
         <source>Error</source>
         <translation>エラー</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="295"/>
+        <location filename="../control/gui/Main.qml" line="306"/>
         <source>An error occurred</source>
         <translation>エラーが発生しました</translation>
     </message>
@@ -309,7 +328,7 @@ Do you want to replace it?</source>
         <translation type="vanished">ワークスペースパスを選択</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="233"/>
+        <location filename="../control/gui/Main.qml" line="244"/>
         <source>Select Workspace Folder</source>
         <translation>ワークスペースフォルダーを選択</translation>
     </message>
@@ -318,24 +337,41 @@ Do you want to replace it?</source>
         <translation type="vanished">作成</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="247"/>
+        <location filename="../control/gui/Main.qml" line="258"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="178"/>
+        <location filename="../control/gui/Main.qml" line="189"/>
         <source>Open Workspace</source>
         <translation>ワークスペースを開く</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="270"/>
+        <source>Open to the Folder</source>
+        <translation type="vanished">フォルダーを開く</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/Main.qml" line="281"/>
         <source>MessageDialogConfirmExit</source>
         <translation>終了する</translation>
     </message>
     <message>
-        <location filename="../control/gui/Main.qml" line="276"/>
+        <location filename="../control/gui/Main.qml" line="287"/>
         <source>MessageDialogText</source>
         <translation>本当に終了しますか？</translation>
+    </message>
+</context>
+<context>
+    <name>MainUserPage</name>
+    <message>
+        <location filename="../control/gui/MainUserPage.qml" line="23"/>
+        <source>ErrorNoSettings</source>
+        <translation>設定が見つかりません</translation>
+    </message>
+    <message>
+        <location filename="../control/gui/MainUserPage.qml" line="33"/>
+        <source>Welcome</source>
+        <translation>ようこそ</translation>
     </message>
 </context>
 <context>
@@ -392,27 +428,27 @@ Do you want to replace it?</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="86"/>
+        <location filename="../control/gui/Settings.qml" line="87"/>
         <source>Theme</source>
         <translation>テーマ</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="91"/>
+        <location filename="../control/gui/Settings.qml" line="93"/>
         <source>Light</source>
         <translation>ライト</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="91"/>
+        <location filename="../control/gui/Settings.qml" line="93"/>
         <source>Dark</source>
         <translation>ダーク</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="107"/>
+        <location filename="../control/gui/Settings.qml" line="109"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../control/gui/Settings.qml" line="126"/>
+        <location filename="../control/gui/Settings.qml" line="128"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>

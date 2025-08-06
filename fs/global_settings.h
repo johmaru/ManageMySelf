@@ -29,8 +29,11 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
 
 public slots:
-    Q_INVOKABLE int createWorkspaceFromQml(const QString &name, const QString &path);
+    Q_INVOKABLE int createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path);
     Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
+    
+    // --- ここからユーザーワークスペースの関数 ---
+    Q_INVOKABLE QStringList getSettings(const QString &path) const;
 
 public:
     explicit GlobalSettings(QObject *parent = nullptr) : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light") {}
@@ -46,6 +49,9 @@ public:
     }
 
     Q_INVOKABLE QStringList getWorkspaces() const;
+
+    Q_INVOKABLE int openWorkspace(const QString &path) const;
+
 
     Q_INVOKABLE void setTheme(const QString &newTheme)
     {
@@ -103,7 +109,7 @@ signals:
     void windowSizeChanged();
     void themeChanged();
     void languageChanged();
-    void workspaceCreated(const QString &name, const QString &path, int result);
+    void workspaceCreated(const QString &userName, const QString &name, const QString &path, int result);
 
 public:
 
