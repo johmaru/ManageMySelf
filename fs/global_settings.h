@@ -50,6 +50,8 @@ public:
 
     Q_INVOKABLE QStringList getWorkspaces() const;
 
+    Q_INVOKABLE int deleteWorkspace(const QString &name) const;
+
     Q_INVOKABLE int openWorkspace(const QString &path) const;
 
 

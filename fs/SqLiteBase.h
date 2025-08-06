@@ -34,8 +34,9 @@ public:
     // QStringlist in 0 index is the name, 1 index is the path
     QStringList getWorkspaceWithName(const QString &name) const;
 
-    // Method to add a workspace to the database
     int addWorkspace(const QString &name, const QString &path) const;
+
+    int deleteWorkspace(const QString &name) const;
 };
 
 #endif // MANAGEMYSELF_SQLITEBASE_H

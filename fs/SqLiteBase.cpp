@@ -201,6 +201,26 @@ QStringList SqLiteBase::getWorkspaces() const {
     return workspaces;
 }
 
+int SqLiteBase::deleteWorkspace(const QString &name) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot delete workspace.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READWRITE);
+        SQLite::Statement query(db, "DELETE FROM workspaces WHERE name = ?");
+        query.bind(1, name.toStdString());
+        query.exec();
+        qInfo() << "Workspace deleted:" << name;
+        return 0; // 成功
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while deleting workspace:" << e.what();
+        return -2; // SQLiteエラーの場合のエラーコード
+    }
+}
+
 QStringList SqLiteBase::getWorkspaceWithName(const QString &name) const {
     QString dbPath = getMainDatabasePath();
     if (dbPath.isEmpty()) {

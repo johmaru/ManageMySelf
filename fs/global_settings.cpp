@@ -141,6 +141,37 @@ int GlobalSettings::createWorkspace(const QStringList &items) const {
     return 0;
 }
 
+int GlobalSettings::deleteWorkspace(const QString &name) const {
+    SqLiteBase db;
+    int exists = db.ExistCheckWorkspaceAtName(name);
+    if (exists <= 0) {
+        qWarning() << "Workspace with name" << name << "does not exist or an error occurred.";
+        return -1; // ワークスペースがない場合
+    }
+
+    QStringList workspaceInfo = db.getWorkspaceWithName(name);
+    if (workspaceInfo.isEmpty()) {
+        qWarning() << "No workspace found with name:" << name;
+        return -2; // ワークスペースが見つからない場合
+    }
+
+    QString path = workspaceInfo.at(1);
+    QDir dir(path);
+    if (!dir.removeRecursively()) {
+        qWarning() << "Failed to delete workspace directory at:" << path;
+        return -3; // ディレクトリの削除に失敗した場合
+    }
+
+    int result = db.deleteWorkspace(name);
+    if (result != 0) {
+        qWarning() << "Failed to remove workspace from database. Error code:" << result;
+        return -4; // データベースから削除に失敗した場合
+    }
+
+    qInfo() << "Workspace deleted successfully:" << name;
+    return 0; // 成功
+}
+
 int GlobalSettings::openWorkspace(const QString &path) const {
     if (path.isEmpty()) {
         qWarning() << "Workspace path cannot be empty";

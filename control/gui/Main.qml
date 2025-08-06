@@ -238,6 +238,21 @@ ApplicationWindow {
                                         stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
                                     }
                                 }
+
+                                Button {
+                                    text: qsTr("Delete")
+                                    onClicked: {
+                                        console.log("Deleting workspace:", modelData);
+                                        let result = settings.deleteWorkspace(modelData);
+                                        if (result === 0) {
+                                            console.log("Workspace deleted successfully");
+                                            workspaceListView.model = settings.getWorkspaces();
+                                        } else {
+                                            errorLabel.text = qsTr("Failed to delete workspace");
+                                            errorDialog.open();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
