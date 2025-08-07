@@ -223,3 +223,35 @@ QStringList GlobalSettings::getSettings(const QString &path) const {
 
     return settings;
 }
+
+int GlobalSettings::createDiary(const QString &title, const QString &path) const {
+    if (title.isEmpty() || path.isEmpty()) {
+        qWarning() << "Title and path cannot be empty";
+        return -1; // タイトルまたはパスが空の場合のエラーコード
+    }
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path for:" << path;
+        return -2; // ユーザーデータベースパスの取得に失敗
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.createDiary(title, path);
+}
+
+QString GlobalSettings::getMonthUserDiarySqlData(int year, int month, const QString &path) const {
+    if (year < 1 || month < 1 || month > 12) {
+        qWarning() << "Invalid year or month for diary data retrieval.";
+        return QString(); // 無効な年または月の場合は空の文字列を返す
+    }
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path.";
+        return QString(); // ユーザーデータベースパスの取得に失敗
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.getDiariesByMonthJson(year, month);
+}

@@ -171,6 +171,7 @@ ApplicationWindow {
 
         MainUserPage {
             id: mainUserPageInstance
+            themeSettings: settings.theme
             onShowError: function(message) {
                 errorLabel.text = message;
                 errorDialog.open();
@@ -184,6 +185,25 @@ ApplicationWindow {
                     mainUserPageInstance.userName = userName[0];
                 } else {
                     mainUserPageInstance.userName = "Unknown";
+                }
+            }
+            onRequestCreateDiary: function(title, path) {
+                let result = settings.createDiary(title, path);
+                if (result === 0) {
+                    console.log("Diary created successfully");
+                } else {
+                    errorLabel.text = qsTr("Failed to create diary");
+                    errorDialog.open();
+                }
+            }
+            onRequestMonthUserDiarySqlData: function(year, month, path) {
+                let sqlData = settings.getMonthUserDiarySqlData(year, month, path);
+                if (sqlData) {
+                    console.log("Retrieved diary data for", year, month, ":", sqlData);
+                    mainUserPageInstance.updateMonthGridData(sqlData);
+                } else {
+                    errorLabel.text = qsTr("Failed to retrieve diary data");
+                    errorDialog.open();
                 }
             }
         }

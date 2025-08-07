@@ -8,6 +8,7 @@
 #include "fs/SqLiteBase.h"
 #include <qdebug.h>
 #include <qdir.h>
+#include <qobject.h>
 class UserSql : public SqLiteBase {
     public:
 
@@ -32,11 +33,15 @@ class UserSql : public SqLiteBase {
             m_pathToUserDb = path;
         }
 
-        int createDiary(const QString &title, const QString &content) const;
+        bool isTodayDiaryExists(const QString &date) const;
 
-        int updateDiary(const QString &title, const QString &content) const;
+        int createDiary(const QString &title,const QString &path) const;
 
-        QList<QPair<QString, QString>> getDiariesByDate(const QString &date) const;
+        int updateDiary(const QString &title, const QString &newTitle, const QString &newContentPath) const;
+
+        QString getDiariesByDate(const QString &date) const;
+
+        QString getDiariesByMonthJson(int year, int month) const;
 
 private:
       QString m_pathToUserDb;
