@@ -33,6 +33,7 @@ public slots:
     Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
     Q_INVOKABLE int createDiary(const QString &title, const QString &path) const;
     Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString &path) const;
+    Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
 
     // --- ここからユーザーワークスペースの関数 ---
     Q_INVOKABLE QStringList getSettings(const QString &path) const;
@@ -44,6 +45,18 @@ public:
     [[nodiscard]] int getWindowHeight() const {return m_windowSize.height();}
     [[nodiscard]] QString getTheme() const {return m_theme;}
     [[nodiscard]] QString getLanguage() const {return m_language;}
+
+    enum class WorkspaceResult {
+        Success = 0,
+        FailedToCreateDirectory = -1,
+        AlreadyExists = -2,
+        ErrorCheckingExistence = -3,
+        WorkspaceNameCannotBeEmpty = -4,
+        InsufficientArguments = -5,
+        WorkspaceDoesNotExist = -6,
+        WorkSpaceNotFound = -7,
+        
+    };
 
     void initialize(QQmlEngine *engine) {
         m_engine = engine;

@@ -39,7 +39,10 @@ int SqLiteBase::checkMainDatabaseAndCreate() const {
     QDir dbDir(QFileInfo(dbPath).absolutePath());
     if (!dbDir.exists()) {
         qInfo() << "Creating database directory:" << dbDir.absolutePath();
-        return -2; // ディレクトリが存在しない場合のエラーコード
+        if (!dbDir.mkpath(".")) {
+            qWarning() << "Failed to create database directory:" << dbDir.absolutePath();
+            return -2; // ディレクトリ作成失敗
+        }
     }
 
     try {

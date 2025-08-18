@@ -11,6 +11,16 @@ class SqLiteBase {
 public:
     virtual ~SqLiteBase() = default;
 
+    enum class UserSqlError {
+        NoError = 0,
+        PathNotSet = -1,
+        DiaryAlreadyExists = -3,
+        PathDoesNotExist = -4,
+        DirectoryChangeFailed = -5,
+        DiaryFileCreationFailed = -6,
+        SQLiteError = -2
+    };
+
 
     // Method to get the file path of the SQLite database
     [[nodiscard]] QString getMainDatabasePath() const;

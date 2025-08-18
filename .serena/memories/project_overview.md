@@ -1,0 +1,38 @@
+# ManageMySelf — Project Overview
+
+- Purpose: Qt/QML ベースのデスクトップアプリ。個人の「ワークスペース」を作成/管理し、日記エントリを SQLite に記録。設定(言語/テーマ/ウィンドウサイズ)は Documents/ManageMySelf/settings.json に保存。アプリ全体の DB (ManageMySelf.db) で最近ファイルとワークスペース一覧を管理。
+- Primary platform: Windows (MinGW, Qt 6.9.1)。CMake 3.31+、Conan を使用。
+- Tech stack:
+  - C++20, CMake, Conan
+  - Qt6: Core, Gui, Qml, Quick, QuickControls2, QuickLayouts, Widgets, LinguistTools (翻訳)
+  - QML/Qt Quick Controls 2 (Material テーマ)
+  - SQLiteCpp 3.3.1 (Conan: sqlitecpp/3.3.1)
+  - windeployqt による配布 DLL 展開
+- Entrypoint: main.cpp
+  - QGuiApplication, QQmlApplicationEngine
+  - Context property: settings (GlobalSettings)
+  - qrc:/Main.qml をロード
+  - GlobalSettings により settings.json のパス確定とロード/初期化、翻訳導入
+  - SqLiteBase.checkMainDatabaseAndCreate でアプリ用 DB を確保
+- Data layout:
+  - %USERPROFILE%/Documents/ManageMySelf/
+    - settings.json (アプリ設定)
+    - ManageMySelf.db (アプリ DB: recent_files, workspaces)
+  - 各ワークスペース: <選択パス>/<ワークスペース名>/
+    - user.db (ユーザ用 DB: diary テーブル)
+    - diaries/ (日記 .md 実体)
+    - settings.json (ユーザ名など)
+- Directory structure (src):
+  - control/gui: QML UI (Main.qml, Settings.qml, CreateWorkspaceForm.qml, MainUserPage.qml, qmldir)
+  - fs: GlobalSettings, JSON 設定ベース, アプリ DB (SqLiteBase), ユーザ DB (UserSql)
+  - os: SqlOS (OS/日時ユーティリティ; 現状ほぼ未使用)
+  - i18n: ts/qm リソース (CMake で .qm 生成、qrc 経由で読み込み)
+- Build system:
+  - CMake: 自動 MOC/RCC/UIC, qt_add_resources, custom target update_translations / run
+  - MinGW の libssp.a 不足回避で -fno-stack-protector を付与 (GCC のみ)
+  - CMAKE_PREFIX_PATH に Qt パス (C:/Qt/6.9.1/mingw_64) を明示
+  - POST_BUILD で Qt6::windeployqt 実行
+- Known constraints / notes:
+  - main.cpp に engine.addImportPath("C:/Qt/6.9.1/mingw_64/qml") のハードコードあり (環境依存)
+  - テストや .clang-format は未整備
+  - CMake 目標: update_translations, run を提供

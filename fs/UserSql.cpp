@@ -10,7 +10,7 @@
 int UserSql::createUserDatabase(const QString &path) const {
     if (path.isEmpty()) {
         qWarning() << "Workspace path has not exists";
-        return -1; // Workspace pathが空の場合のエラーコード
+        return static_cast<int>(UserSql::UserSqlError::PathNotSet);
     }
 
     QDir dir(path);
@@ -30,35 +30,35 @@ int UserSql::createUserDatabase(const QString &path) const {
         qInfo() << "Diary table ensured in the user database.";
     } catch (const SQLite::Exception &e) {
         qWarning() << "SQLite error while creating user database:" << e.what();
-        return -2; // エラーコードを返す
+        return static_cast<int>(UserSql::UserSqlError::SQLiteError);
     }
 
     dir.mkdir("diaries"); // 日記用のディレクトリを作成
     qInfo() << "Diaries directory created at:" << dir.filePath("diaries");
 
-    return 0; // 成功コードを返す
+    return static_cast<int>(UserSql::UserSqlError::NoError);
 }
 
 int UserSql::createDiary(const QString &title,const QString &path) const {
     if (m_pathToUserDb.isEmpty()) {
         qWarning() << "User database path is not set.";
-        return -1; // パスが空の場合のエラーコード
+        return static_cast<int>(UserSql::UserSqlError::PathNotSet);
     }
 
     if (isTodayDiaryExists(QDate::currentDate().toString("yyyy-MM-dd"))) {
         qWarning() << "Diary entry with title" << title << "already exists for today.";
-        return -3; // 今日の日記が既に存在する場合のエラーコード
+        return static_cast<int>(UserSql::UserSqlError::DiaryAlreadyExists);
     }
 
     try {
 
         QDir dir(path);
         if (!dir.exists()) {
-            return -4; // パスが存在しない場合のエラーコード
+            return static_cast<int>(UserSql::UserSqlError::PathDoesNotExist);
         }
         if (!dir.cd("diaries")) {
             qWarning() << "Failed to enter diaries directory at:" << dir.filePath("diaries");
-            return -5; // ディレクトリcd失敗のエラーコード
+            return static_cast<int>(UserSql::UserSqlError::DirectoryChangeFailed);
         }
 
         SQLite::Database db(m_pathToUserDb.toStdString(), SQLite::OPEN_READWRITE);
@@ -72,22 +72,22 @@ int UserSql::createDiary(const QString &title,const QString &path) const {
         QFile diaryFile(diaryFilePath);
         if (!diaryFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             qWarning() << "Failed to create diary file at:" << diaryFilePath;
-            return -6; // 日記ファイル作成失敗のエラーコード
+            return static_cast<int>(UserSql::UserSqlError::DiaryFileCreationFailed);
         }
         diaryFile.close();
         qInfo() << "Diary file created at:" << diaryFilePath;
 
-        return 0; // 成功
+        return static_cast<int>(UserSql::UserSqlError::NoError);
     } catch (const SQLite::Exception &e) {
         qWarning() << "SQLite error while creating diary entry:" << e.what();
-        return -2; // エラーコード
+        return static_cast<int>(UserSql::UserSqlError::SQLiteError);
     }
 }
 
 int UserSql::updateDiary(const QString &title, const QString &newTitle, const QString &newContentPath) const {
     if (m_pathToUserDb.isEmpty()) {
         qWarning() << "User database path is not set.";
-        return -1; // パスが空の場合のエラーコード
+        return static_cast<int>(UserSql::UserSqlError::PathNotSet);
     }
 
     try {
@@ -101,7 +101,7 @@ int UserSql::updateDiary(const QString &title, const QString &newTitle, const QS
             oldContentPath = QString::fromStdString(selectQuery.getColumn(0).getText());
         } else {
             qWarning() << "Diary entry not found with title:" << title;
-            return -3; // 日記エントリが見つからない場合のエラーコード
+            return static_cast<int>(UserSql::UserSqlError::DiaryAlreadyExists);
         }
         
         QFileInfo fileInfo(oldContentPath);
@@ -114,10 +114,10 @@ int UserSql::updateDiary(const QString &title, const QString &newTitle, const QS
         updateQuery.exec();
         
         qInfo() << "Diary entry updated:" << newTitle;
-        return 0; // 成功
+        return static_cast<int>(UserSql::UserSqlError::NoError);
     } catch (const SQLite::Exception &e) {
         qWarning() << "SQLite error while updating diary entry:" << e.what();
-        return -2; // エラーコード
+        return static_cast<int>(UserSql::UserSqlError::SQLiteError);
     }
 }
 

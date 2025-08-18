@@ -13,6 +13,7 @@ Page {
     signal requestCreateDiary(string title, string path)
     signal requestMonthUserDiarySqlData(int year, int month, string path)
     signal updateMonthGridData(string jsonString)
+    signal requestNavigateMarkdownViewer(string contentPath)
 
     onUpdateMonthGridData: function(jsonString) {
         if (monthGrid) {
@@ -170,6 +171,48 @@ Page {
         onClicked: datePickerDialog.open()
     }
 
+    Menu {
+        id: dayContextMenu
+
+        property int selectedDay: 0
+        property string selectedMDContentPath: ""
+
+        MenuItem {
+            text: qsTr("Edit")
+            onTriggered: {
+                console.log("Edit diary for day:", dayContextMenu.selectedDay);
+            }
+        }
+
+        Menu {
+        id: showItemMenu
+        title: qsTr("Show Item")
+        
+        property bool hasItems: dayContextMenu.selectedMDContentPath !== ""
+        
+        MenuItem {
+            text: qsTr("Show Diary")
+            visible: showItemMenu.hasItems
+            enabled: showItemMenu.hasItems
+            onTriggered: {
+                if (dayContextMenu.selectedMDContentPath !== "") {
+                    mainUserPage.requestNavigateMarkdownViewer(dayContextMenu.selectedMDContentPath);
+                } else {
+                    console.warn("No content path selected for day:", dayContextMenu.selectedDay);
+                }
+                console.log("Content Path:", dayContextMenu.selectedMDContentPath);
+            }
+        }
+        
+        MenuItem {
+            text: qsTr("No item has been available")
+            visible: !showItemMenu.hasItems
+            enabled: false
+        }
+    }
+    
+    }
+
     GridView {
         id: monthGrid
         width: 280
@@ -245,7 +288,9 @@ Page {
                             }
                             break;
                         case Qt.RightButton:
-                            console.log("Right click on day:", parent.day, "Diaries:", parent.dayDiaries.length);
+                            dayContextMenu.selectedDay = parent.day
+                            dayContextMenu.selectedMDContentPath = parent.dayDiaries.length > 0 ? parent.dayDiaries[0].contentPath : ""
+                            dayContextMenu.open()
                             break;
                     }
                 }

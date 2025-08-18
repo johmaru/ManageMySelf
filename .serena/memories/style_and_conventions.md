@@ -1,0 +1,25 @@
+# Style & Conventions
+
+- Language: C++20 / Qt コーディング規約を概ね踏襲。
+- Naming:
+  - クラス: PascalCase (GlobalSettings, SqLiteBase, UserSql, SqlOS)
+  - メソッド: camelCase (createWorkspaceFromQml, getWorkspaces, getDiariesByMonthJson)
+  - メンバ: m_ 前置 (m_language, m_windowSize)
+  - 定数: UPPER_SNAKE_CASE (SETTINGS_DIR_NAME)
+- Qt/Signals:
+  - Q_OBJECT, Q_PROPERTY, Q_INVOKABLE を適所に使用
+  - signals: windowSizeChanged, themeChanged, languageChanged, workspaceCreated
+- Error handling:
+  - 戻り値でエラーコード管理 (>=0 成功, <0/特定値 で各種エラー)
+  - qInfo/qWarning/qCritical ログ出力
+- I/O & Paths:
+  - QStandardPaths::DocumentsLocation を基準 (Windows)
+  - QDir, QFile を使用
+- QML:
+  - Qt Quick Controls 2 + Material テーマ
+  - i18n: qsTr() 使用、動的 retranslate 対応
+- Build:
+  - CMake 3.31+, AUTOUIC/AUTOMOC/AUTORCC 有効
+  - Qt 6.9.1 MinGW 前提のパスを CMAKE_PREFIX_PATH/engine.addImportPath で明示
+- Dependencies:
+  - Conan (sqlitecpp/3.3.1)

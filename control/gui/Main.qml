@@ -203,7 +203,31 @@ ApplicationWindow {
                     mainUserPageInstance.updateMonthGridData(sqlData);
                 } else {
                     errorLabel.text = qsTr("Failed to retrieve diary data");
-                    errorDialog.open();
+                    stackView.pop();
+                }
+            }
+
+            onRequestNavigateMarkdownViewer: function(contentPath) {
+                stackView.push(markdownViewerComponent, { markdownContentPath: contentPath });
+            }
+            
+            Component {
+                id: markdownViewerComponent
+
+                MarkDownViewer {
+                    id: markdownViewerPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                    onRequestLoadMarkdownFile: function(path) {
+                        let content = settings.loadMarkdownFile(path);
+                        if (content) {
+                            markdownViewerPage.updateMarkdownContent(content);
+                        } else {
+                            errorLabel.text = qsTr("Failed to load markdown file");
+                            errorDialog.open();
+                        }
+                    }
                 }
             }
         }

@@ -14,6 +14,7 @@
 #include <QQuickStyle>
 #include <QQmlComponent>
 #include <QQuickWindow>
+#include <QLibraryInfo>
 
 #include "fs/SqLiteBase.h"
 #include "fs/global_settings.h"
@@ -28,7 +29,14 @@ int main(int argc, char *argv[]) {
     QQmlApplicationEngine engine;
 
     engine.addImportPath("qrc:/");
-    engine.addImportPath("C:/Qt/6.9.1/mingw_64/qml");
+  
+    const QString envQmlPath = qEnvironmentVariable("QT_QML_IMPORT_PATH");
+    if (!envQmlPath.isEmpty()) {
+        engine.addImportPath(envQmlPath);
+    } else {
+        const QString qtQml = QLibraryInfo::path(QLibraryInfo::QmlImportsPath);
+        if (!qtQml.isEmpty()) engine.addImportPath(qtQml);
+    }
 
     auto *settings = new GlobalSettings(&engine);
 

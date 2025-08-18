@@ -12,6 +12,8 @@
 #include <QWidget>
 #include <QJsonDocument>
 #include <qcontainerfwd.h>
+#include <qdebug.h>
+#include <qobject.h>
 
 
 
@@ -254,4 +256,15 @@ QString GlobalSettings::getMonthUserDiarySqlData(int year, int month, const QStr
 
     UserSql userSql(userDbPath);
     return userSql.getDiariesByMonthJson(year, month);
+}
+
+QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Could not open markdown file:" << filePath;
+        return QString(); // ファイルを開けない場合は空の文字列を返す
+    }
+
+    QTextStream in(&file);
+    return in.readAll();
 }
