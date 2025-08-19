@@ -25,10 +25,7 @@ Page{
 
                 Menu {
                     id: toolMenu
-                    MenuItem {
-                        text: qsTr("Back")
-                        onTriggered: markdownViewerPage.backRequested()
-                    }
+                    
                     MenuItem {
                         text: qsTr("Refresh")
                         onTriggered: {
@@ -36,6 +33,10 @@ Page{
                                 markdownViewerPage.requestLoadMarkdownFile(markdownContentPath)
                             }
                         }
+                    }
+                    MenuItem {
+                        text: qsTr("Back")
+                        onTriggered: markdownViewerPage.backRequested()
                     }
                 }
             }
