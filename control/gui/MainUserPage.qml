@@ -13,6 +13,7 @@ Page {
     signal requestCreateDiary(string title, string path)
     signal requestMonthUserDiarySqlData(int year, int month, string path)
     signal updateMonthGridData(string jsonString)
+    signal requestNavigateMarkdownEditor(string contentPath)
     signal requestNavigateMarkdownViewer(string contentPath)
 
     onUpdateMonthGridData: function(jsonString) {
@@ -177,10 +178,29 @@ Page {
         property int selectedDay: 0
         property string selectedMDContentPath: ""
 
-        MenuItem {
-            text: qsTr("Edit")
-            onTriggered: {
-                console.log("Edit diary for day:", dayContextMenu.selectedDay);
+        Menu {
+            id: editItemMenu
+            title: qsTr("Edit Item")
+
+            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath !== ""
+
+            MenuItem {
+                text: qsTr("Edit Diary")
+                visible: editItemMenu.hasDiaryItems
+                enabled: editItemMenu.hasDiaryItems
+                onTriggered: {
+                    if (dayContextMenu.selectedMDContentPath !== "") {
+                        mainUserPage.requestNavigateMarkdownEditor(dayContextMenu.selectedMDContentPath);
+                    } else {
+                        console.warn("No content path selected for day:", dayContextMenu.selectedDay);
+                    }
+                }
+            }
+
+            MenuItem {
+                text: qsTr("Item has not been available")
+                visible: !editItemMenu.hasDiaryItems
+                enabled: false
             }
         }
 
@@ -188,12 +208,12 @@ Page {
         id: showItemMenu
         title: qsTr("Show Item")
         
-        property bool hasItems: dayContextMenu.selectedMDContentPath !== ""
+        property bool hasDiaryItems: dayContextMenu.selectedMDContentPath !== ""
         
         MenuItem {
             text: qsTr("Show Diary")
-            visible: showItemMenu.hasItems
-            enabled: showItemMenu.hasItems
+            visible: showItemMenu.hasDiaryItems
+            enabled: showItemMenu.hasDiaryItems
             onTriggered: {
                 if (dayContextMenu.selectedMDContentPath !== "") {
                     mainUserPage.requestNavigateMarkdownViewer(dayContextMenu.selectedMDContentPath);
@@ -206,7 +226,7 @@ Page {
         
         MenuItem {
             text: qsTr("No item has been available")
-            visible: !showItemMenu.hasItems
+            visible: !showItemMenu.hasDiaryItems
             enabled: false
         }
     }

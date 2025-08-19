@@ -34,6 +34,7 @@ public slots:
     Q_INVOKABLE int createDiary(const QString &title, const QString &path) const;
     Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString &path) const;
     Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
+    Q_INVOKABLE int writeMarkdownFile(const QString &filePath, const QString &content) const;
 
     // --- ここからユーザーワークスペースの関数 ---
     Q_INVOKABLE QStringList getSettings(const QString &path) const;

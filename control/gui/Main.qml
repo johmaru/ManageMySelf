@@ -207,8 +207,42 @@ ApplicationWindow {
                 }
             }
 
+            onRequestNavigateMarkdownEditor: function(contentPath) {
+                stackView.push(markdownEditorComponent, { markdownContentPath: contentPath });
+            }
+
             onRequestNavigateMarkdownViewer: function(contentPath) {
                 stackView.push(markdownViewerComponent, { markdownContentPath: contentPath });
+            }
+
+            Component {
+                id: markdownEditorComponent
+                
+                MarkEditor {
+                    id: markdownEditorPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                    onRequestLoadMarkdownFile: function(path) {
+                        let content = settings.loadMarkdownFile(path);
+                        if (content) {
+                            markdownEditorPage.rawMarkdownContent = content;
+                            markdownEditorPage.markdownContentPath = path;
+                        } else {
+                            errorLabel.text = qsTr("Failed to load markdown file");
+                            errorDialog.open();
+                        }
+                    }
+                    onRequestWriteMarkdownFile: function(path, content) {
+                        let result = settings.writeMarkdownFile(path, content);
+                        if (result === 0) {
+                            console.log("Markdown file saved successfully");
+                        } else {
+                            errorLabel.text = qsTr("Failed to save markdown file");
+                            errorDialog.open();
+                        }
+                    }
+                }
             }
             
             Component {

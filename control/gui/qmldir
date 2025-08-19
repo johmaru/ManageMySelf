@@ -4,3 +4,4 @@ CreateWorkspaceForm 1.0 CreateWorkspaceForm.qml
 Settings 1.0 Settings.qml
 MainUserPage 1.0 MainUserPage.qml
 MarkDownViewer 1.0 MarkDownViewer.qml
+MarkEditor 1.0 MarkDownEditor.qml

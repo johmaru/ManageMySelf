@@ -6,6 +6,7 @@
         <file alias="Settings.qml">control/gui/Settings.qml</file>
         <file alias="MainUserPage.qml">control/gui/MainUserPage.qml</file>
         <file alias="MarkDownViewer.qml">control/gui/MarkDownViewer.qml</file>
+        <file alias="MarkDownEditor.qml">control/gui/MarkDownEditor.qml</file>
         <file alias="qmldir">control/gui/qmldir</file>
     </qresource>
 </RCC>

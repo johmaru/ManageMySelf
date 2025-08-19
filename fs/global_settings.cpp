@@ -268,3 +268,18 @@ QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
     QTextStream in(&file);
     return in.readAll();
 }
+
+int GlobalSettings::writeMarkdownFile(const QString &filePath, const QString &content) const {
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Could not open markdown file for writing:" << filePath;
+        return -1; // ファイルを開けない場合のエラーコード
+    }
+
+    QTextStream out(&file);
+    out << content;
+    file.close();
+    
+    qInfo() << "Markdown file written successfully:" << filePath;
+    return 0; // 成功
+}
