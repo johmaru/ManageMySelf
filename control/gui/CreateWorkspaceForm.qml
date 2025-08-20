@@ -10,15 +10,35 @@ Page {
     // 親コンポーネントに通知するためのシグナル
     signal showError(string message)
     signal backRequested()
-    signal workspaceCreated(string name, string path)
+    signal workspaceCreated(string userName, string name, string path)
 
     background: Rectangle {
         color: Material.background
     }
 
     Label {
-        id: createWorkspaceLabel
+        id: userNameLabel
         anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: 10
+        font.pixelSize: 18
+        text: qsTr("UserName")
+    }
+
+    TextField {
+        id: userNameTextField
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: userNameLabel.bottom
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        anchors.topMargin: 10
+        placeholderText: qsTr("Enter your name")
+    }
+
+    Label {
+        id: createWorkspaceLabel
+        anchors.top: userNameTextField.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.topMargin: 20
         font.pixelSize: 18
@@ -89,6 +109,11 @@ Page {
         Button {
             text: qsTr("Create")
             onClicked: {
+                if (userNameTextField.text.trim() === "") {
+                    createWorkspaceItem.showError(qsTr("User name cannot be empty"));
+                    return;
+                }
+
                 if (workspaceNameTextField.text.trim() === "") {
                     createWorkspaceItem.showError(qsTr("Workspace name cannot be empty"));
                     return;
@@ -97,7 +122,7 @@ Page {
                     createWorkspaceItem.showError(qsTr("Workspace path cannot be empty"));
                     return;
                 }
-                createWorkspaceItem.workspaceCreated(workspaceNameTextField.text, workspacePathTextField.text);
+                createWorkspaceItem.workspaceCreated(userNameTextField.text, workspaceNameTextField.text, workspacePathTextField.text);
             }
         }
 

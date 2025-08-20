@@ -12,6 +12,7 @@
 #include <QSize>
 #include <QObject>
 #include <QStringList>
+#include <qcontainerfwd.h>
 #include <qcoreapplication.h>
 #include <qdebug.h>
 #include <qqmlengine.h>
@@ -28,7 +29,15 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
     Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
 
 public slots:
-    Q_INVOKABLE int createWorkspaceFromQml(const QString &name, const QString &path);
+    Q_INVOKABLE int createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path);
+    Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
+    Q_INVOKABLE int createDiary(const QString &title, const QString &path) const;
+    Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString &path) const;
+    Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
+    Q_INVOKABLE int writeMarkdownFile(const QString &filePath, const QString &content) const;
+
+    // --- ここからユーザーワークスペースの関数 ---
+    Q_INVOKABLE QStringList getSettings(const QString &path) const;
 
 public:
     explicit GlobalSettings(QObject *parent = nullptr) : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light") {}
@@ -38,10 +47,29 @@ public:
     [[nodiscard]] QString getTheme() const {return m_theme;}
     [[nodiscard]] QString getLanguage() const {return m_language;}
 
+    enum class WorkspaceResult {
+        Success = 0,
+        FailedToCreateDirectory = -1,
+        AlreadyExists = -2,
+        ErrorCheckingExistence = -3,
+        WorkspaceNameCannotBeEmpty = -4,
+        InsufficientArguments = -5,
+        WorkspaceDoesNotExist = -6,
+        WorkSpaceNotFound = -7,
+        
+    };
+
     void initialize(QQmlEngine *engine) {
         m_engine = engine;
         loadTranslation(m_language);
     }
+
+    Q_INVOKABLE QStringList getWorkspaces() const;
+
+    Q_INVOKABLE int deleteWorkspace(const QString &name) const;
+
+    Q_INVOKABLE int openWorkspace(const QString &path) const;
+
 
     Q_INVOKABLE void setTheme(const QString &newTheme)
     {
@@ -99,7 +127,7 @@ signals:
     void windowSizeChanged();
     void themeChanged();
     void languageChanged();
-    void workspaceCreated(const QString &name, const QString &path, int result);
+    void workspaceCreated(const QString &userName, const QString &name, const QString &path, int result);
 
 public:
 

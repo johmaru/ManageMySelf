@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import QtQuick.Controls.Material
 
 /* global settings */
@@ -31,52 +32,8 @@ ApplicationWindow {
         exitDialog.open();
     }
 
-    header: ToolBar {
-        RowLayout {
-            anchors.fill : parent
-            spacing: 10
-
-            ToolButton {
-                text: qsTr("ToolBarFile")
-
-                Menu {
-                    id: fileMenu
-                    y: parent.height
-
-                    MenuItem {
-                        text: qsTr("ToolBarSettings")
-                        implicitWidth: 50
-                        implicitHeight: 30
-                        contentItem: Text {
-                            text: parent.text
-                            color: Material.foreground
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: {
-                            stackView.push(settingsComponent);
-                        }
-                    }
-
-                    MenuItem {
-                        text: qsTr("ToolBarExit")
-                        implicitWidth: 100
-                        implicitHeight: 30
-                        contentItem: Text {
-                            text: parent.text
-                            color: Material.foreground
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: {
-                            root.close();
-                        }
-                    }
-                }
-
-                onClicked: fileMenu.open()
-            }
-        }
+    header: Loader {
+        sourceComponent: stackView.currentItem ? stackView.currentItem.headerComponent : undefined
     }
 
     StackView {
@@ -89,6 +46,54 @@ ApplicationWindow {
         id: mainContent
 
         Item {
+            property Component headerComponent: ToolBar {
+                RowLayout {
+                    anchors.fill : parent
+                    spacing: 10
+
+                    ToolButton {
+                        text: qsTr("ToolBarFile")
+
+                        Menu {
+                            id: fileMenu
+                            y: parent.height
+
+                            MenuItem {
+                                text: qsTr("ToolBarSettings")
+                                implicitWidth: 50
+                                implicitHeight: 30
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: Material.foreground
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    stackView.push(settingsComponent);
+                                }
+                            }
+
+                            MenuItem {
+                                text: qsTr("ToolBarExit")
+                                implicitWidth: 100
+                                implicitHeight: 30
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: Material.foreground
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: {
+                                    root.close();
+                                }
+                            }
+                        }
+
+                        onClicked: fileMenu.open()
+                    }
+                }
+            }
+
             Label {
                 anchors.centerIn: parent
 
@@ -108,7 +113,7 @@ ApplicationWindow {
                 currentIndex: -1
                 displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
 
-                onActivated: {
+                onActivated: function(index) {
                     handleSelectionChange(index)
                     currentIndex = -1
                 }
@@ -143,14 +148,14 @@ ApplicationWindow {
             onBackRequested: function() {
                 stackView.pop();
             }
-            onWorkspaceCreated: function(name, path) {
+            onWorkspaceCreated: function(userName,name, path) {
                 
-                let result = settings.createWorkspaceFromQml(name, path);
+                let result = settings.createWorkspaceFromQml(userName,name, path);
 
                 if (result === 0) {
                     console.log("Workspace created successfully");
                     stackView.pop();
-                } else if (result === 1) {
+                } else if (result === -1) {
                     errorLabel.text = "Exist an Folder";
                     errorDialog.open();
                 } else {
@@ -162,19 +167,207 @@ ApplicationWindow {
     }
 
     Component {
+        id: mainUserPageComponent
+
+        MainUserPage {
+            id: mainUserPageInstance
+            themeSettings: settings.theme
+            onShowError: function(message) {
+                errorLabel.text = message;
+                errorDialog.open();
+            }
+            onBackRequested: function() {
+                stackView.pop();
+            }
+            onRequestGetUserName: function(path) {
+                let userName = settings.getSettings(path);
+                if (userName.length > 0) {
+                    mainUserPageInstance.userName = userName[0];
+                } else {
+                    mainUserPageInstance.userName = "Unknown";
+                }
+            }
+            onRequestCreateDiary: function(title, path) {
+                let result = settings.createDiary(title, path);
+                if (result === 0) {
+                    console.log("Diary created successfully");
+                } else {
+                    errorLabel.text = qsTr("Failed to create diary");
+                    errorDialog.open();
+                }
+            }
+            onRequestMonthUserDiarySqlData: function(year, month, path) {
+                let sqlData = settings.getMonthUserDiarySqlData(year, month, path);
+                if (sqlData) {
+                    console.log("Retrieved diary data for", year, month, ":", sqlData);
+                    mainUserPageInstance.updateMonthGridData(sqlData);
+                } else {
+                    errorLabel.text = qsTr("Failed to retrieve diary data");
+                    stackView.pop();
+                }
+            }
+
+            onRequestNavigateMarkdownEditor: function(contentPath) {
+                stackView.push(markdownEditorComponent, { markdownContentPath: contentPath });
+            }
+
+            onRequestNavigateMarkdownViewer: function(contentPath) {
+                stackView.push(markdownViewerComponent, { markdownContentPath: contentPath });
+            }
+
+            Component {
+                id: markdownEditorComponent
+                
+                MarkEditor {
+                    id: markdownEditorPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                    onRequestLoadMarkdownFile: function(path) {
+                        let content = settings.loadMarkdownFile(path);
+                        if (content) {
+                            markdownEditorPage.rawMarkdownContent = content;
+                            markdownEditorPage.markdownContentPath = path;
+                        } else {
+                            errorLabel.text = qsTr("Failed to load markdown file");
+                            errorDialog.open();
+                        }
+                    }
+                    onRequestWriteMarkdownFile: function(path, content) {
+                        let result = settings.writeMarkdownFile(path, content);
+                        if (result === 0) {
+                            console.log("Markdown file saved successfully");
+                        } else {
+                            errorLabel.text = qsTr("Failed to save markdown file");
+                            errorDialog.open();
+                        }
+                    }
+                }
+            }
+            
+            Component {
+                id: markdownViewerComponent
+
+                MarkDownViewer {
+                    id: markdownViewerPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                    onRequestLoadMarkdownFile: function(path) {
+                        let content = settings.loadMarkdownFile(path);
+                        if (content) {
+                            markdownViewerPage.updateMarkdownContent(content);
+                        } else {
+                            errorLabel.text = qsTr("Failed to load markdown file");
+                            errorDialog.open();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
         id: openWorkspaceComponent
 
         Item {
-            Label {
-                anchors.centerIn: parent
-                text: qsTr("Open Workspace")
-            }
+            property var workspaceModel: settings.getWorkspaces()
 
-            Button {
-                anchors.bottom: parent.bottom
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Back")
-                onClicked: stackView.pop()
+            ColumnLayout{
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+
+                Label {
+                    text: qsTr("Open Workspace")
+                    font.pixelSize: 20
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                ScrollView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+
+                    ListView {
+                        id: workspaceListView
+                        model: workspaceModel
+                        spacing: 5
+                        delegate: Item {
+                            width: parent.width
+                            height: 40
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: 10
+
+                                Label {
+                                    text: modelData
+                                    Layout.fillWidth: true
+                                    verticalAlignment: Label.AlignVCenter
+                                }
+
+                                Button {
+                                    text: qsTr("Open")
+                                    onClicked: {
+                                       let workspace = settings.getWorkspaceWithName(modelData);
+                                        console.log("Opening workspace:", workspace[1]);
+                                        stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
+                                    }
+                                }
+
+                                Button {
+                                    text: qsTr("Delete")
+                                    onClicked: {
+                                        console.log("Deleting workspace:", modelData);
+                                        let result = settings.deleteWorkspace(modelData);
+                                        if (result === 0) {
+                                            console.log("Workspace deleted successfully");
+                                            workspaceListView.model = settings.getWorkspaces();
+                                        } else {
+                                            errorLabel.text = qsTr("Failed to delete workspace");
+                                            errorDialog.open();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 10
+
+                    Button {
+                        text: qsTr("Open from Folder")
+                        onClicked: {
+                            folderDialog.open();
+                        }
+                    }
+
+                    FolderDialog {
+                        id: folderDialog
+                        title: qsTr("Select Workspace Folder")
+                        onAccepted: {
+                            var path = folderDialog.selectedFolder.toString();
+                            if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
+                                path = path.substring(8);
+                            }
+                            if (Qt.platform.os === "windows" && path.startsWith('/')) {
+                                path = path.substring(1);
+                            }
+                            console.log("Selected folder path:", path);
+                        }
+                    }
+
+                    Button {
+                        text: qsTr("Back")
+                        onClicked: stackView.pop()
+                    }
+                }
             }
         }
     }

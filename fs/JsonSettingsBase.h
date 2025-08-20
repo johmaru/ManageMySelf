@@ -20,6 +20,10 @@ public:
     bool loadFromFile(const QString &filePath);
 
     [[nodiscard]] virtual QString getFilePath() const = 0;
+
+    [[nodiscard]] static int saveToFileAny(const QString &filePath, const QJsonObject &json);
+
+    [[nodiscard]] static QJsonObject loadFromFileAny(const QString &filePath);
 };
 
 #endif //MANAGEMYSELF_JSONSETTINGSBASE_H

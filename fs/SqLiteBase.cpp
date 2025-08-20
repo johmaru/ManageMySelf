@@ -39,7 +39,10 @@ int SqLiteBase::checkMainDatabaseAndCreate() const {
     QDir dbDir(QFileInfo(dbPath).absolutePath());
     if (!dbDir.exists()) {
         qInfo() << "Creating database directory:" << dbDir.absolutePath();
-        return -2; // ディレクトリが存在しない場合のエラーコード
+        if (!dbDir.mkpath(".")) {
+            qWarning() << "Failed to create database directory:" << dbDir.absolutePath();
+            return -2; // ディレクトリ作成失敗
+        }
     }
 
     try {
@@ -51,6 +54,15 @@ int SqLiteBase::checkMainDatabaseAndCreate() const {
             "path TEXT NOT NULL UNIQUE, "
             "last_opened_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
+        qInfo() << "Recent files table ensured in the database.";
+
+        db.exec("CREATE TABLE IF NOT EXISTS workspaces ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "name TEXT NOT NULL UNIQUE, "
+            "path TEXT NOT NULL UNIQUE, "
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+        qInfo() << "Workspaces table ensured in the database.";
 
     } catch (const SQLite::Exception &e) {
         qWarning() << "SQLite error while checking or creating the database:" << e.what();
@@ -81,6 +93,72 @@ int SqLiteBase::addRecentFile(const QString &filePath) const {
     }
 }
 
+int SqLiteBase::ExistCheckWorkspaceAtName(const QString &name) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot check workspace existence.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READONLY);
+        SQLite::Statement query(db, "SELECT COUNT(*) FROM workspaces WHERE name = ?");
+        query.bind(1, name.toStdString());
+        
+        if (query.executeStep()) {
+            return query.getColumn(0).getInt(); // 存在する場合は1、存在しない場合は0
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while checking workspace existence:" << e.what();
+    }
+
+    return -2; // エラーコード
+}
+
+int SqLiteBase::ExistCheckWorkspaceAtPath(const QString &path) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot check workspace existence.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READONLY);
+        SQLite::Statement query(db, "SELECT COUNT(*) FROM workspaces WHERE path = ?");
+        query.bind(1, path.toStdString());
+        
+        if (query.executeStep()) {
+            return query.getColumn(0).getInt(); // 存在する場合は1、存在しない場合は0
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while checking workspace existence:" << e.what();
+    }
+
+    return -2; // エラーコード
+}
+
+int SqLiteBase::addWorkspace(const QString &name, const QString &path) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot add workspace.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READWRITE);
+        SQLite::Statement query(db, "INSERT INTO workspaces (name, path) VALUES (?, ?) "
+                                "ON CONFLICT(name) DO UPDATE SET path=excluded.path");
+        query.bind(1, name.toStdString());
+        query.bind(2, path.toStdString());
+        query.exec();
+        qInfo() << "Workspace added:" << name << "at" << path;
+        return 0; // 成功
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while adding workspace:" << e.what();
+        return -2; // SQLiteエラーの場合のエラーコード
+    }
+}
+
 QStringList SqLiteBase::getRecentFiles(int limit) const {
     QString dbPath = getMainDatabasePath();
     if (dbPath.isEmpty()) {
@@ -102,4 +180,71 @@ QStringList SqLiteBase::getRecentFiles(int limit) const {
     }
 
     return recentFiles;
+}
+
+QStringList SqLiteBase::getWorkspaces() const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot retrieve workspaces.";
+        return QStringList(); // パスが空の場合は空のリストを返す
+    }
+
+    QStringList workspaces;
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READONLY);
+        SQLite::Statement query(db, "SELECT name FROM workspaces ORDER BY created_at DESC");
+        
+        while (query.executeStep()) {
+            workspaces.append(QString::fromStdString(query.getColumn(0).getText()));
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while retrieving workspaces:" << e.what();
+    }
+
+    return workspaces;
+}
+
+int SqLiteBase::deleteWorkspace(const QString &name) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot delete workspace.";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READWRITE);
+        SQLite::Statement query(db, "DELETE FROM workspaces WHERE name = ?");
+        query.bind(1, name.toStdString());
+        query.exec();
+        qInfo() << "Workspace deleted:" << name;
+        return 0; // 成功
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while deleting workspace:" << e.what();
+        return -2; // SQLiteエラーの場合のエラーコード
+    }
+}
+
+QStringList SqLiteBase::getWorkspaceWithName(const QString &name) const {
+    QString dbPath = getMainDatabasePath();
+    if (dbPath.isEmpty()) {
+        qWarning() << "Database path is empty. Cannot retrieve workspace.";
+        return QStringList(); // パスが空の場合は空のリストを返す
+    }
+
+    try {
+        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READONLY);
+        SQLite::Statement query(db, "SELECT path FROM workspaces WHERE name = ?");
+        query.bind(1, name.toStdString());
+        
+        if (query.executeStep()) {
+            QStringList workspace;
+            workspace.append(name);
+            workspace.append(QString::fromStdString(query.getColumn(0).getText()));
+            return workspace;
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while retrieving workspace:" << e.what();
+    }
+
+    return QStringList(); // ワークスペースが見つからない場合は空のリストを返す
 }

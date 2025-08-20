@@ -17,7 +17,14 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/mingw_64")
+# Allow overriding Qt path via env QT_PREFIX_PATH; fallback to default
+if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
+    if(DEFINED ENV{QT_PREFIX_PATH} AND NOT "$ENV{QT_PREFIX_PATH}" STREQUAL "")
+        set(CMAKE_PREFIX_PATH "$ENV{QT_PREFIX_PATH}")
+    else()
+        set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/mingw_64")
+    endif()
+endif()
 
 find_package(Qt6 REQUIRED COMPONENTS 
     Core 
@@ -123,6 +130,8 @@ add_executable(ManageMySelf
         fs/global_settings.cpp
         fs/JsonSettingsBase.cpp
         fs/SqLiteBase.cpp
+        fs/UserSql.cpp
+        os/SqlOS.cpp
         ${I18N_RCC_OUTPUT}
 )
 
