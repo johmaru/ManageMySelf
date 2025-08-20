@@ -105,7 +105,11 @@ Page {
                 return
             }
             
-            mainUserPage.requestCreateDiary(title, mainUserPage.workspacePath)
+            var createDiaryRequest = mainUserPage.requestCreateDiary(title, mainUserPage.workspacePath)
+            if (createDiaryRequest == 0) {
+                monthGrid.loadMonthData();
+            }
+            
             
             diaryTitleField.text = ""
         }
@@ -117,7 +121,7 @@ Page {
 
     Dialog {
         id: datePickerDialog
-        title: "日付を選択"
+        title: qsTr("Date Picker")
         standardButtons: Dialog.Ok | Dialog.Cancel
         
         contentItem: Column {
@@ -177,6 +181,22 @@ Page {
 
         property int selectedDay: 0
         property string selectedMDContentPath: ""
+
+        Menu {
+            id: createItemMenu
+            title: qsTr("Create Item")
+
+            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
+
+            MenuItem {
+                text: qsTr("Create Diary")
+                visible: createItemMenu.hasDiaryItems
+                enabled: createItemMenu.hasDiaryItems
+                onTriggered: {
+                    createDiaryDialog.open()
+                }
+            }
+        }
 
         Menu {
             id: editItemMenu

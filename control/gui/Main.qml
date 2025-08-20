@@ -225,13 +225,8 @@ ApplicationWindow {
                     }
                     onRequestLoadMarkdownFile: function(path) {
                         let content = settings.loadMarkdownFile(path);
-                        if (content) {
                             markdownEditorPage.rawMarkdownContent = content;
                             markdownEditorPage.markdownContentPath = path;
-                        } else {
-                            errorLabel.text = qsTr("Failed to load markdown file");
-                            errorDialog.open();
-                        }
                     }
                     onRequestWriteMarkdownFile: function(path, content) {
                         let result = settings.writeMarkdownFile(path, content);
@@ -255,12 +250,7 @@ ApplicationWindow {
                     }
                     onRequestLoadMarkdownFile: function(path) {
                         let content = settings.loadMarkdownFile(path);
-                        if (content) {
                             markdownViewerPage.updateMarkdownContent(content);
-                        } else {
-                            errorLabel.text = qsTr("Failed to load markdown file");
-                            errorDialog.open();
-                        }
                     }
                 }
             }

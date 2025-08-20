@@ -259,6 +259,18 @@ QString GlobalSettings::getMonthUserDiarySqlData(int year, int month, const QStr
 }
 
 QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
+
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists() || !fileInfo.isFile()) {
+        qWarning() << "Invalid markdown file path:" << filePath;
+        return QString(); // 無効なファイルパスの場合は空の文字列を返す
+    }
+
+    if (fileInfo.size() == 0) {
+        qInfo() << "[Markdown] File exists but empty (0 bytes):" << filePath;
+        return QStringLiteral("# (Empty Diary)\n\n");
+    }
+
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qWarning() << "Could not open markdown file:" << filePath;
@@ -266,7 +278,9 @@ QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
     }
 
     QTextStream in(&file);
-    return in.readAll();
+    QString content = in.readAll();
+    qInfo() << "[Markdown] Loaded:" << content;
+    return content;
 }
 
 int GlobalSettings::writeMarkdownFile(const QString &filePath, const QString &content) const {
