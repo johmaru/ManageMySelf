@@ -11,7 +11,9 @@ Page {
     signal requestGetUserName(string path)
     signal backRequested()
     signal requestCreateDiary(string title, string path)
+    signal requestCreateStatus(string path)
     signal requestMonthUserDiarySqlData(int year, int month, string path)
+    signal requestMonthUserStatusData(int year, int month, string path)
     signal updateMonthGridData(string jsonString)
     signal requestNavigateMarkdownEditor(string contentPath)
     signal requestNavigateMarkdownViewer(string contentPath)
@@ -30,6 +32,11 @@ Page {
 
     property int currentYear: new Date().getFullYear()
     property int currentMonth: new Date().getMonth() + 1
+
+    property string _pendingDiaryJson: ""
+    property string _pendingStatusJson: ""
+    property bool _diaryArrived: false
+    property bool _statusArrived: false
 
     property Component headerComponent: ToolBar {
         RowLayout {
@@ -77,6 +84,74 @@ Page {
         mainUserPage.requestGetUserName(path);
     }
 
+    function reloadMonthData() {
+        if (monthGrid) {
+            monthGrid.loadMonthData();
+        }
+    }
+
+    function handleDiaryData(jsonString) {
+        _pendingDiaryJson = jsonString
+        _diaryArrived = true
+        _tryComposeAndUpdate()
+    }
+
+    function handleStatusData(jsonString) {
+        _pendingStatusJson = jsonString
+        _statusArrived = true
+        _tryComposeAndUpdate()
+    }
+
+    function _tryComposeAndUpdate() {
+        if (!(_diaryArrived && _statusArrived))
+            return
+
+        var merged = _mergeDiaryAndStatus(_pendingDiaryJson, _pendingStatusJson)
+        updateMonthGridData(JSON.stringify(merged))
+
+        _pendingDiaryJson = ""
+        _pendingStatusJson = ""
+        _diaryArrived = false
+        _statusArrived = false
+    }
+
+    function _normalizeDiaryArray(obj) {
+        if (!obj) return []
+        if (Array.isArray(obj)) return obj
+        if (obj.diaries && Array.isArray(obj.diaries)) return obj.diaries
+        return []
+    }
+
+    function _mergeDiaryAndStatus(diaryJson, statusJson) {
+        var diaryObj, statusObj
+        try {diaryObj = JSON.parse(diaryJson)} catch(e) {diaryObj = {}}
+        try {statusObj = JSON.parse(statusJson)} catch(e) {statusObj = {}}
+
+        var diaries = _normalizeDiaryArray(diaryObj)
+         var statuses = []
+        if (Array.isArray(statusObj.statuses)) statuses = statusObj.statuses
+        else if (Array.isArray(statusObj.status)) statuses = statusObj.status
+
+        var statusByDate = {}
+
+        for (var i = 0; i < statuses.length; i++) {
+            var s = statuses[i]
+            if (s.createdAt) statusByDate[s.createdAt] = s
+        }
+
+        for (var j = 0; j < diaries.length; j++) {
+            var d = diaries[j]
+            var has = false
+            if (d.createdAt && statusByDate[d.createdAt]) {
+                d.status = statusByDate[d.createdAt]
+                has = true
+            }
+            d.hasStatus = has
+        }
+
+        return { diaries: diaries }
+    }
+
     Dialog {
         id: createDiaryDialog
         title: qsTr("Create Diary")
@@ -105,11 +180,11 @@ Page {
                 return
             }
             
-            var createDiaryRequest = mainUserPage.requestCreateDiary(title, mainUserPage.workspacePath)
-            if (createDiaryRequest == 0) {
-                monthGrid.loadMonthData();
-            }
-            
+            mainUserPage.requestCreateDiary(title, mainUserPage.workspacePath)
+
+            Qt.callLater(function() {
+                monthGrid.loadMonthData()
+            })
             
             diaryTitleField.text = ""
         }
@@ -187,6 +262,7 @@ Page {
             title: qsTr("Create Item")
 
             property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
+            property bool hasStatus: !monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
 
             MenuItem {
                 text: qsTr("Create Diary")
@@ -196,6 +272,15 @@ Page {
                     createDiaryDialog.open()
                 }
             }
+
+            MenuItem {
+                    text: qsTr("Create Status")
+                    visible: createItemMenu.hasStatus
+                    enabled: createItemMenu.hasStatus
+                    onTriggered: {
+                        mainUserPage.requestCreateStatus(mainUserPage.workspacePath);
+                    }
+                }
         }
 
         Menu {
@@ -270,6 +355,8 @@ Page {
         delegate: Rectangle {
             width: 40
             height: 40
+
+            readonly property bool hasStatus: monthGrid.hasStatusForDay(day)
             
             property int day: {
                 var firstDay = new Date(monthGrid.year, monthGrid.month, 1).getDay()
@@ -336,9 +423,49 @@ Page {
                 }
             }
         }
+
+        function hasStatusForDay(day) {
+            if (day <= 0) return false
+            var items = monthGrid.monthData[day] || []
+            for (var i = 0; i < items.length; i++) {
+                if (items[i] && (items[i].hasStatus === true || items[i].status)) return true
+            }
+            return false
+        }
+
+        function _extractStatusFields(statusObj) {
+            if (!statusObj) return { mood: null, freeTextMood: null }
+            var mood = statusObj.mood !== undefined ? statusObj.mood : null
+            var freeText = statusObj.free_mood_text !== undefined ? statusObj.free_mood_text
+                         : (statusObj.freeMoodText !== undefined ? statusObj.freeMoodText : null)
+            return { mood: mood, freeTextMood: freeText }
+        }
+
+        function hasMoodForDay(day) {
+            if (day <= 0) return false
+            var items = monthGrid.monthData[day] || []
+            for (var i = 0; i < items.length; i++) {
+                var s = items[i] ? items[i].status : null
+                var f = _extractStatusFields(s)
+                if (f.mood !== null && f.mood !== "") return true
+            }
+            return false
+        }
+
+        function getMoodForDay(day) {
+            if (day <= 0) return null
+            var items = monthGrid.monthData[day] || []
+            for (var i = 0; i < items.length; i++) {
+                var s = items[i] ? items[i].status : null
+                var f = _extractStatusFields(s)
+                if (f.mood !== null && f.mood !== "") return f.mood
+            }
+            return null
+        }
         
         function loadMonthData() {
             mainUserPage.requestMonthUserDiarySqlData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath)
+            mainUserPage.requestMonthUserStatusData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath)
         }
 
         function updateMonthData(jsonString) {
@@ -399,6 +526,7 @@ Page {
         
         Component.onCompleted: {
             mainUserPage.requestMonthUserDiarySqlData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath);
+            loadMonthData();
         }
     }
     }

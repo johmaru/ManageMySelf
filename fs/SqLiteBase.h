@@ -18,6 +18,8 @@ public:
         PathDoesNotExist = -4,
         DirectoryChangeFailed = -5,
         DiaryFileCreationFailed = -6,
+        NoStatusEntryFound = -7,
+        DiaryFileRenameFailed = -8,
         SQLiteError = -2
     };
 

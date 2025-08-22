@@ -191,18 +191,40 @@ ApplicationWindow {
                 let result = settings.createDiary(title, path);
                 if (result === 0) {
                     console.log("Diary created successfully");
+                    mainUserPageInstance.reloadMonthData();
                 } else {
                     errorLabel.text = qsTr("Failed to create diary");
                     errorDialog.open();
                 }
             }
+
+            onRequestCreateStatus: function(path) {
+                let result = settings.createStatus(path);
+                if (result === 0) {
+                    console.log("Status created successfully");
+                } else {
+                    errorLabel.text = qsTr("Failed to create status");
+                    errorDialog.open();
+                }
+            }
+
             onRequestMonthUserDiarySqlData: function(year, month, path) {
                 let sqlData = settings.getMonthUserDiarySqlData(year, month, path);
                 if (sqlData) {
                     console.log("Retrieved diary data for", year, month, ":", sqlData);
-                    mainUserPageInstance.updateMonthGridData(sqlData);
+                    mainUserPageInstance.handleDiaryData(sqlData);
                 } else {
                     errorLabel.text = qsTr("Failed to retrieve diary data");
+                    stackView.pop();
+                }
+            }
+
+            onRequestMonthUserStatusData: function(year, month, path) {
+                let statusData = settings.getMonthUserStatusData(year, month, path);
+                if (statusData) {
+                    mainUserPageInstance.handleStatusData(statusData);
+                } else {
+                    errorLabel.text = qsTr("Failed to retrieve status data");
                     stackView.pop();
                 }
             }
