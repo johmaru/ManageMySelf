@@ -10,7 +10,7 @@ Page {
     signal showError(string message)
     signal requestGetUserName(string path)
     signal backRequested()
-    signal requestCreateDiary(string title, string path)
+    signal requestCreateDiary(int year, int month,int day,string title, string path)
     signal requestCreateStatus(string path)
     signal requestMonthUserDiarySqlData(int year, int month, string path)
     signal requestMonthUserStatusData(int year, int month, string path)
@@ -52,7 +52,16 @@ Page {
                     MenuItem {
                         text: qsTr("Create Diary")
                         onTriggered: {
-                            createDiaryDialog.open()
+                            var today = todayYYmmdd();
+                            var selectedDate = mainUserPage.currentYear + "-" + 
+                                               ("0" + mainUserPage.currentMonth).slice(-2) + "-" + 
+                                               ("0" + monthGrid.currentDay).slice(-2);
+
+                            if (selectedDate === today) {
+                                createDiaryDialog.open()
+                            } else {
+                                dateMissMatchDialog.open()
+                            }
                         }
                     }
 
@@ -78,6 +87,14 @@ Page {
         console.log("Current month property:", currentMonth)
         console.log("MonthGrid month:", monthGrid.month)
         mainUserPage.requestGetSettings(mainUserPage.workspacePath);
+    }
+
+    function todayYYmmdd() {
+        var today = new Date();
+        
+        return today.getFullYear() + "-" + 
+               ("0" + (today.getMonth() + 1)).slice(-2) + "-" + 
+               ("0" + today.getDate()).slice(-2);
     }
 
     function requestGetSettings(path) {
@@ -179,8 +196,8 @@ Page {
                 mainUserPage.showError(qsTr("Title cannot be empty"))
                 return
             }
-            
-            mainUserPage.requestCreateDiary(title, mainUserPage.workspacePath)
+
+            mainUserPage.requestCreateDiary(monthGrid.year, monthGrid.month + 1, monthGrid.currentDay, title, mainUserPage.workspacePath)
 
             Qt.callLater(function() {
                 monthGrid.loadMonthData()
@@ -192,6 +209,25 @@ Page {
         onRejected: {
             diaryTitleField.text = ""
         }
+    }
+
+    Dialog {
+        id: dateMissMachDialog
+        title: qsTr("Date Mismatch")
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        contentItem: Column {
+            spacing: 10
+            width: 300
+
+            Label {
+                text: qsTr("The selected date does not match the diary entry date. Are you sure you want to continue?")
+            }
+        }
+
+        onAccepted: {
+                createDiaryDialog.open()
+            }
     }
 
     Dialog {
@@ -269,18 +305,36 @@ Page {
                 visible: createItemMenu.hasDiaryItems
                 enabled: createItemMenu.hasDiaryItems
                 onTriggered: {
-                    createDiaryDialog.open()
+                    var today = todayYYmmdd();
+                    var selectedDate = mainUserPage.currentYear + "-" + 
+                        ("0" + mainUserPage.currentMonth).slice(-2) + "-" + 
+                        ("0" + monthGrid.currentDay).slice(-2);
+
+                    if (selectedDate === today) {
+                        createDiaryDialog.open()
+                    } else {
+                        dateMissMachDialog.open()
+                    }
                 }
             }
 
             MenuItem {
-                    text: qsTr("Create Status")
-                    visible: createItemMenu.hasStatus
-                    enabled: createItemMenu.hasStatus
-                    onTriggered: {
-                        mainUserPage.requestCreateStatus(mainUserPage.workspacePath);
+                text: qsTr("Create Status")
+                visible: createItemMenu.hasStatus
+                enabled: createItemMenu.hasStatus
+                onTriggered: {
+                    var today = todayYYmmdd()
+                    var selectedDate = mainUserPage.currentYear + "-" +
+                                       ("0" + mainUserPage.currentMonth).slice(-2) + "-" +
+                                       ("0" + dayContextMenu.selectedDay).slice(-2)
+
+                    if (selectedDate === today) {
+                        mainUserPage.requestCreateStatus(mainUserPage.workspacePath)
+                    } else {
+                        console.warn("Cannot create status for past days:", dayContextMenu.selectedDay)
                     }
                 }
+            }
         }
 
         Menu {
@@ -347,6 +401,7 @@ Page {
         
         property int month: mainUserPage.currentMonth - 1
         property int year: mainUserPage.currentYear
+        property int currentDay: new Date().getDate()
         property var monthData: ({})
         property int updateTrigger: 0
         
@@ -406,6 +461,8 @@ Page {
                 onClicked: function(mouse) {
                     if (parent.day === 0) return
                     
+                    monthGrid.currentDay = parent.day
+
                     switch (mouse.button) {
                         case Qt.LeftButton:
                             var diaries = parent.dayDiaries
@@ -413,6 +470,9 @@ Page {
                             if (diaries.length > 0) {
                                 console.log("Diary titles:", diaries.map(d => d.title))
                             }
+                            var status = parent.dayDiaries.length > 0 ? parent.dayDiaries[0].status : null
+                            var mood = monthGrid._extractStatusFields(status).mood
+                            console.log("Mood:", mood)
                             break;
                         case Qt.RightButton:
                             dayContextMenu.selectedDay = parent.day

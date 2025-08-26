@@ -226,7 +226,7 @@ QStringList GlobalSettings::getSettings(const QString &path) const {
     return settings;
 }
 
-int GlobalSettings::createDiary(const QString &title, const QString &path) const {
+int GlobalSettings::createDiary(int year, int month, int day, const QString &title, const QString &path) const {
     if (title.isEmpty() || path.isEmpty()) {
         qWarning() << "Title and path cannot be empty";
         return -1; // タイトルまたはパスが空の場合のエラーコード
@@ -239,7 +239,7 @@ int GlobalSettings::createDiary(const QString &title, const QString &path) const
     }
 
     UserSql userSql(userDbPath);
-    return userSql.createDiary(title, path);
+    return userSql.createDiary(year, month, day, title, path);
 }
 
 int GlobalSettings::createStatus(const QString &path) const {

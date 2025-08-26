@@ -187,8 +187,8 @@ ApplicationWindow {
                     mainUserPageInstance.userName = "Unknown";
                 }
             }
-            onRequestCreateDiary: function(title, path) {
-                let result = settings.createDiary(title, path);
+            onRequestCreateDiary: function(year, month, day, title, path) {
+                let result = settings.createDiary(year, month, day, title, path);
                 if (result === 0) {
                     console.log("Diary created successfully");
                     mainUserPageInstance.reloadMonthData();
