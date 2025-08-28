@@ -306,6 +306,30 @@ int UserSql::createStatus() const {
     }
 }
 
+int UserSql::editStatus(int year, int month, int day, const QJsonObject &jsonObject) const {
+    if (m_pathToUserDb.isEmpty()) {
+        qWarning() << "User database path is not set.";
+        return static_cast<int>(UserSql::UserSqlError::PathNotSet);
+    }
+
+    try {
+        SQLite::Database db(m_pathToUserDb.toStdString(), SQLite::OPEN_READWRITE);
+        SQLite::Statement query(db, "UPDATE user_status SET mood = ?, free_mood_text = ?, sleep_time = ?, wake_up_time = ?, temperature = ? WHERE date(created_at) = ?");
+        query.bind(1, jsonObject["mood"].toInt());
+        query.bind(2, jsonObject["free_mood_text"].toString().toStdString());
+        query.bind(3, jsonObject["sleep_time"].toInt());
+        query.bind(4, jsonObject["wake_up_time"].toInt());
+        query.bind(5, jsonObject["temperature"].toInt());
+        query.bind(6, QDate(year, month, day).toString("yyyy-MM-dd").toStdString());
+        query.exec();
+        qInfo() << "Status entry updated for date:" << QDate(year, month, day).toString("yyyy-MM-dd");
+        return static_cast<int>(UserSql::UserSqlError::NoError);
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while updating status entry:" << e.what();
+        return static_cast<int>(UserSql::UserSqlError::SQLiteError);
+    }
+}
+
 bool UserSql::isTodayDiaryExists(const QString &date) const {
     if (m_pathToUserDb.isEmpty()) {
         qWarning() << "User database path is not set.";

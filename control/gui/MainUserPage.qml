@@ -1,11 +1,25 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls.Material
+import QtQml
 
 Page {
     id: mainUserPage
+
+    property string userName: ""
+    property string workspacePath: ""
+    property int currentYear: new Date().getFullYear()
+    property int currentMonth: new Date().getMonth() + 1
+
+    property var themeSettings: undefined
+
+    property string _pendingDiaryJson: ""
+    property string _pendingStatusJson: ""
+    property bool _diaryArrived: false
+    property bool _statusArrived: false
 
     signal showError(string message)
     signal requestGetUserName(string path)
@@ -17,71 +31,18 @@ Page {
     signal updateMonthGridData(string jsonString)
     signal requestNavigateMarkdownEditor(string contentPath)
     signal requestNavigateMarkdownViewer(string contentPath)
+    signal requestStatusEditor(int year, int month, int day, string jsonString, string path)
 
     onUpdateMonthGridData: function(jsonString) {
         if (monthGrid) {
-            monthGrid.updateMonthData(jsonString);
+            monthGrid.updateMonthData(jsonString)
         } else {
-            console.error("MonthGrid not found");
+            console.error("MonthGrid not found")
         }
     }
 
-    property string workspacePath: ""
-    property string userName: ""
-    property string themeSettings: "light"
-
-    property int currentYear: new Date().getFullYear()
-    property int currentMonth: new Date().getMonth() + 1
-
-    property string _pendingDiaryJson: ""
-    property string _pendingStatusJson: ""
-    property bool _diaryArrived: false
-    property bool _statusArrived: false
-
-    property Component headerComponent: ToolBar {
-        RowLayout {
-            anchors.fill: parent
-
-            ToolButton {
-                text: qsTr("File")
-            
-                onClicked: fileMenu.open()
-
-                Menu {
-                    id: fileMenu
-                    MenuItem {
-                        text: qsTr("Create Diary")
-                        onTriggered: {
-                            var today = todayYYmmdd();
-                            var selectedDate = mainUserPage.currentYear + "-" + 
-                                               ("0" + mainUserPage.currentMonth).slice(-2) + "-" + 
-                                               ("0" + monthGrid.currentDay).slice(-2);
-
-                            if (selectedDate === today) {
-                                createDiaryDialog.open()
-                            } else {
-                                dateMissMatchDialog.open()
-                            }
-                        }
-                    }
-
-                    MenuItem {
-                        text: qsTr("Back to Workspaces")
-                        onTriggered: mainUserPage.backRequested()
-                    }
-                }
-            }
-        }
-    }
-
-    Material.theme: themeSettings === "light" ? Material.Light : Material.Dark
-    Material.accent: Material.Blue
 
     Component.onCompleted: {
-
-        var theme = settings.theme || "dark";
-        themeSettings = theme;
-
         console.log("Today's date:", new Date())
         console.log("JavaScript getMonth():", new Date().getMonth())
         console.log("Current month property:", currentMonth)
@@ -101,6 +62,16 @@ Page {
         mainUserPage.requestGetUserName(path);
     }
 
+    function getSettings(path) {
+        return mainUserPage.requestGetSettings(path)
+    }
+    function getMonthUserDiarySqlData(year, month, path) {
+        mainUserPage.requestMonthUserDiarySqlData(year, month, path)
+    }
+    function getMonthUserStatusData(year, month, path) {
+        mainUserPage.requestMonthUserStatusData(year, month, path)
+    }
+
     function reloadMonthData() {
         if (monthGrid) {
             monthGrid.loadMonthData();
@@ -108,28 +79,28 @@ Page {
     }
 
     function handleDiaryData(jsonString) {
-        _pendingDiaryJson = jsonString
-        _diaryArrived = true
-        _tryComposeAndUpdate()
+        mainUserPage._pendingDiaryJson = jsonString
+        mainUserPage._diaryArrived = true
+        mainUserPage._tryComposeAndUpdate()
     }
 
     function handleStatusData(jsonString) {
-        _pendingStatusJson = jsonString
-        _statusArrived = true
-        _tryComposeAndUpdate()
+        mainUserPage._pendingStatusJson = jsonString
+        mainUserPage._statusArrived = true
+        mainUserPage._tryComposeAndUpdate()
     }
 
     function _tryComposeAndUpdate() {
-        if (!(_diaryArrived && _statusArrived))
+        if (!(mainUserPage._diaryArrived && mainUserPage._statusArrived))
             return
 
-        var merged = _mergeDiaryAndStatus(_pendingDiaryJson, _pendingStatusJson)
-        updateMonthGridData(JSON.stringify(merged))
+        var merged = mainUserPage._mergeDiaryAndStatus(mainUserPage._pendingDiaryJson, mainUserPage._pendingStatusJson)
+        mainUserPage.updateMonthGridData(JSON.stringify(merged))
 
-        _pendingDiaryJson = ""
-        _pendingStatusJson = ""
-        _diaryArrived = false
-        _statusArrived = false
+        mainUserPage._pendingDiaryJson = ""
+        mainUserPage._pendingStatusJson = ""
+        mainUserPage._diaryArrived = false
+        mainUserPage._statusArrived = false
     }
 
     function _normalizeDiaryArray(obj) {
@@ -185,10 +156,10 @@ Page {
         id: createDiaryDialog
         title: qsTr("Create Diary")
         standardButtons: Dialog.Ok | Dialog.Cancel
+        width: 320
     
         contentItem: Column {
             spacing: 10
-            width: 300
             
             Label {
                 text: qsTr("Title:")
@@ -196,7 +167,7 @@ Page {
             
             TextField {
                 id: diaryTitleField
-                width: parent.width
+                width: 280
                 placeholderText: qsTr("Enter diary title")
             }
         }
@@ -227,6 +198,7 @@ Page {
         id: dateMissMatchDialog
         title: qsTr("Date Mismatch")
         standardButtons: Dialog.Ok | Dialog.Cancel
+    width: 320
 
         contentItem: Column {
             spacing: 10
@@ -246,10 +218,10 @@ Page {
         id: datePickerDialog
         title: qsTr("Date Picker")
         standardButtons: Dialog.Ok | Dialog.Cancel
+        width: 300
         
         contentItem: Column {
             spacing: 10
-            width: 250
             
             Label { text: "年:" }
             SpinBox {
@@ -257,14 +229,14 @@ Page {
                 from: 1900
                 to: 2100
                 value: mainUserPage.currentYear
-                width: parent.width
+                width: 250
                 height: 30
             }
             
             Label { text: "月:" }
             ComboBox {
                 id: monthComboBox
-                width: parent.width
+                width: 250
                 model: ["1月", "2月", "3月", "4月", "5月", "6月", 
                        "7月", "8月", "9月", "10月", "11月", "12月"]
                 currentIndex: mainUserPage.currentMonth - 1
@@ -294,120 +266,15 @@ Page {
         spacing: 10
 
         ToolButton {
-        id: datePickerButton
-        text: "日付選択"
-        onClicked: datePickerDialog.open()
-    }
-
-    Menu {
-        id: dayContextMenu
-
-        property int selectedDay: 0
-        property string selectedMDContentPath: ""
-
-        Menu {
-            id: createItemMenu
-            title: qsTr("Create Item")
-
-            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
-            property bool hasStatus: (monthGrid.updateTrigger, !monthGrid.hasStatusForDay(dayContextMenu.selectedDay))
-
-            MenuItem {
-                text: qsTr("Create Diary")
-                visible: createItemMenu.hasDiaryItems
-                enabled: createItemMenu.hasDiaryItems
-                onTriggered: {
-                    var today = todayYYmmdd();
-                    var selectedDate = mainUserPage.currentYear + "-" + 
-                        ("0" + mainUserPage.currentMonth).slice(-2) + "-" + 
-                        ("0" + monthGrid.currentDay).slice(-2);
-
-                    if (selectedDate === today) {
-                        createDiaryDialog.open()
-                    } else {
-                        dateMissMatchDialog.open()
-                    }
-                }
-            }
-
-            MenuItem {
-                text: qsTr("Create Status")
-                visible: createItemMenu.hasStatus
-                enabled: createItemMenu.hasStatus
-                onTriggered: {
-                    var today = todayYYmmdd()
-                    var selectedDate = mainUserPage.currentYear + "-" +
-                                       ("0" + mainUserPage.currentMonth).slice(-2) + "-" +
-                                       ("0" + dayContextMenu.selectedDay).slice(-2)
-
-                    if (selectedDate === today) {
-                        mainUserPage.requestCreateStatus(mainUserPage.workspacePath)
-                    } else {
-                        console.warn("Cannot create status for past days:", dayContextMenu.selectedDay)
-                    }
-                }
-            }
+            id: datePickerButton
+            text: "日付選択"
+            onClicked: datePickerDialog.open()
         }
 
-        Menu {
-            id: editItemMenu
-            title: qsTr("Edit Item")
-
-            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath !== ""
-
-            MenuItem {
-                text: qsTr("Edit Diary")
-                visible: editItemMenu.hasDiaryItems
-                enabled: editItemMenu.hasDiaryItems
-                onTriggered: {
-                    if (dayContextMenu.selectedMDContentPath !== "") {
-                        mainUserPage.requestNavigateMarkdownEditor(dayContextMenu.selectedMDContentPath);
-                    } else {
-                        console.warn("No content path selected for day:", dayContextMenu.selectedDay);
-                    }
-                }
-            }
-
-            MenuItem {
-                text: qsTr("Item has not been available")
-                visible: !editItemMenu.hasDiaryItems
-                enabled: false
-            }
-        }
-
-        Menu {
-        id: showItemMenu
-        title: qsTr("Show Item")
-        
-        property bool hasDiaryItems: dayContextMenu.selectedMDContentPath !== ""
-        
-        MenuItem {
-            text: qsTr("Show Diary")
-            visible: showItemMenu.hasDiaryItems
-            enabled: showItemMenu.hasDiaryItems
-            onTriggered: {
-                if (dayContextMenu.selectedMDContentPath !== "") {
-                    mainUserPage.requestNavigateMarkdownViewer(dayContextMenu.selectedMDContentPath);
-                } else {
-                    console.warn("No content path selected for day:", dayContextMenu.selectedDay);
-                }
-                console.log("Content Path:", dayContextMenu.selectedMDContentPath);
-            }
-        }
-        
-        MenuItem {
-            text: qsTr("No item has been available")
-            visible: !showItemMenu.hasDiaryItems
-            enabled: false
-        }
-    }
-    
-    }
-
-    GridView {
+        GridView {
         id: monthGrid
-        width: 280
-        height: 240
+        Layout.preferredWidth: 280
+        Layout.preferredHeight: 240
         cellWidth: 40
         cellHeight: 40
         
@@ -422,6 +289,7 @@ Page {
         delegate: Rectangle {
             width: 40
             height: 40
+            required property int index
 
             readonly property var  dayDiaries: (monthGrid.updateTrigger, monthGrid.monthData[day] || [])
             readonly property bool hasDiary:   (monthGrid.updateTrigger, monthGrid.hasDiaryForDay(day))
@@ -502,7 +370,14 @@ Page {
                         case Qt.RightButton:
                             dayContextMenu.selectedDay = parent.day
                             dayContextMenu.selectedMDContentPath = parent.dayDiaries.length > 0 ? parent.dayDiaries[0].contentPath : ""
-                            dayContextMenu.open()
+                            var items = parent.dayDiaries
+                            var statusObj = null
+                            for (var i = 0; i < items.length; i++) {
+                                var s = items[i] ? items[i].status : null
+                                if (s && Object.keys(s).length > 0) { statusObj = s; break }
+                            }
+                            dayContextMenu.selectedStatusJson = statusObj ? JSON.stringify(statusObj) : ""
+                            dayContextMenu.popup(parent, mouse.x, mouse.y)
                             break;
                     }
                 }
@@ -648,9 +523,208 @@ Page {
         onYearChanged: loadMonthData()
         
         Component.onCompleted: {
-            mainUserPage.requestMonthUserDiarySqlData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath);
-            loadMonthData();
+            mainUserPage.requestMonthUserDiarySqlData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath)
+            loadMonthData()
+        }
         }
     }
+
+    Component {
+        id: cmpCreateDiary
+        MenuItem {
+            text: qsTr("Create Diary")
+            onTriggered: {
+                dayContextMenu.close()
+                var today = mainUserPage.todayYYmmdd()
+                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + monthGrid.currentDay).slice(-2)
+                if (selectedDate === today) {
+                    createDiaryDialog.open()
+                } else {
+                    dateMissMatchDialog.open()
+                }
+            }
+        }
+    }
+
+    Component {
+        id: cmpCreateStatus
+        MenuItem {
+            text: qsTr("Create Status")
+            onTriggered: {
+                dayContextMenu.close()
+                var today = mainUserPage.todayYYmmdd()
+                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + monthGrid.currentDay).slice(-2)
+                if (selectedDate === today) {
+                    mainUserPage.requestCreateStatus(mainUserPage.workspacePath)
+                } else {
+                    console.warn("Cannot create status for past days:", monthGrid.currentDay)
+                }
+            }
+        }
+    }
+
+    Component {
+        id: cmpNoCreateDiary
+        MenuItem { text: qsTr("Cannot create diary for past days"); enabled: false }
+    }
+
+    Component { id: cmpEditDiary
+        MenuItem {
+            text: qsTr("Edit Diary")
+            onTriggered: {
+                dayContextMenu.close()
+                if (dayContextMenu.selectedMDContentPath !== "")
+                    mainUserPage.requestNavigateMarkdownEditor(dayContextMenu.selectedMDContentPath)
+            }
+        }
+    }
+    Component { id: cmpEditStatus
+        MenuItem {
+            text: qsTr("Edit Status")
+            onTriggered: {
+                dayContextMenu.close()
+                mainUserPage.requestStatusEditor(
+                    mainUserPage.currentYear,
+                    mainUserPage.currentMonth,
+                    dayContextMenu.selectedDay,
+                    dayContextMenu.selectedStatusJson,
+                    mainUserPage.workspacePath
+                )
+            }
+        }
+    }
+    Component { id: cmpNoItem
+        MenuItem { text: qsTr("Item has not been available"); enabled: false }
+    }
+
+    Component {
+        id: cmpShowDiary
+        MenuItem {
+            text: qsTr("Show Diary")
+            onTriggered: {
+                dayContextMenu.close()
+                if (dayContextMenu.selectedMDContentPath !== "") {
+                    mainUserPage.requestNavigateMarkdownViewer(dayContextMenu.selectedMDContentPath)
+                } else {
+                    console.warn("No content path selected for day:", dayContextMenu.selectedDay)
+                }
+                console.log("Content Path:", dayContextMenu.selectedMDContentPath)
+            }
+        }
+    }
+
+    Menu {
+        id: dayContextMenu
+
+        property int selectedDay: 0
+        property string selectedMDContentPath: ""
+        property string selectedStatusJson: ""
+
+        Menu {
+            id: createItemMenu
+            title: qsTr("Create Item")
+
+            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
+            property bool hasStatus: (monthGrid.updateTrigger, !monthGrid.hasStatusForDay(dayContextMenu.selectedDay))
+
+            property var __dynItems: []
+            onAboutToShow: {
+                for (var i = 0; i < __dynItems.length; i++) {
+                    var obj = __dynItems[i]
+                    if (obj) {
+                        try { createItemMenu.removeItem(obj) } catch(e) {}
+                        try { obj.destroy() } catch(e) {}
+                    }
+                }
+                __dynItems = []
+
+                const showCreateDiary = createItemMenu.hasDiaryItems
+                const showCreateStatus = createItemMenu.hasStatus
+
+                if (showCreateDiary) {
+                    var d = cmpCreateDiary.createObject(null)
+                    createItemMenu.addItem(d)
+                    __dynItems.push(d)
+                }
+                if (showCreateStatus) {
+                    var s = cmpCreateStatus.createObject(null)
+                    createItemMenu.addItem(s)
+                    __dynItems.push(s)
+                }
+                if (!showCreateDiary && !showCreateStatus) {
+                    var n = cmpNoCreateDiary.createObject(null)
+                    createItemMenu.addItem(n)
+                    __dynItems.push(n)
+                }
+            }
+        }
+
+        Menu {
+            id: editItemMenu
+            title: qsTr("Edit Item")
+
+            property var __dynItems: []
+            onAboutToShow: {
+                for (var i = 0; i < __dynItems.length; i++) {
+                    var obj = __dynItems[i]
+                    if (obj) {
+                        try { editItemMenu.removeItem(obj) } catch(e) {}
+                        try { obj.destroy() } catch(e) {}
+                    }
+                }
+                __dynItems = []
+
+                const showEditDiary = dayContextMenu.selectedMDContentPath !== ""
+                const showEditStatus = monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
+
+                if (showEditDiary) {
+                    var d = cmpEditDiary.createObject(null)
+                    editItemMenu.addItem(d)
+                    __dynItems.push(d)
+                }
+                if (showEditStatus) {
+                    var s = cmpEditStatus.createObject(null)
+                    editItemMenu.addItem(s)
+                    __dynItems.push(s)
+                }
+                if (!showEditDiary && !showEditStatus) {
+                    var n = cmpNoItem.createObject(null)
+                    editItemMenu.addItem(n)
+                    __dynItems.push(n)
+                }
+            }
+        }
+
+        Menu {
+            id: showItemMenu
+            title: qsTr("Show Item")
+
+            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath !== ""
+
+            property var __dynItems: []
+            onAboutToShow: {
+                for (var i = 0; i < __dynItems.length; i++) {
+                    var obj = __dynItems[i]
+                    if (obj) {
+                        try { showItemMenu.removeItem(obj) } catch(e) {}
+                        try { obj.destroy() } catch(e) {}
+                    }
+                }
+                __dynItems = []
+
+                const showDiary = showItemMenu.hasDiaryItems
+
+                if (showDiary) {
+                    var d = cmpShowDiary.createObject(null)
+                    showItemMenu.addItem(d)
+                    __dynItems.push(d)
+                }
+                if (!showDiary) {
+                    var n = cmpNoItem.createObject(null)
+                    showItemMenu.addItem(n)
+                    __dynItems.push(n)
+                }
+            }
+        }
     }
 }

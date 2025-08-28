@@ -276,6 +276,21 @@ ApplicationWindow {
                     }
                 }
             }
+
+            onRequestStatusEditor: function(year, month, day, jsonString, path) {
+                stackView.push(statusEditorComponent, { year: year, month: month, day: day, statusJson: jsonString, workspacePath: path });
+            }
+
+            Component {
+                id: statusEditorComponent
+
+                StatusEditor {
+                    id: statusEditorPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                }
+            }
         }
     }
 

@@ -49,6 +49,8 @@ class UserSql : public SqLiteBase {
 
         int createStatus() const;
 
+        int editStatus(int year, int month, int day, const QJsonObject &jsonObject) const;
+
         QString getDiariesByDate(const QString &date) const;
 
         QString getDiariesByMonthJson(int year, int month) const;
