@@ -141,32 +141,44 @@ Page {
 
     function _mergeDiaryAndStatus(diaryJson, statusJson) {
         var diaryObj, statusObj
-        try {diaryObj = JSON.parse(diaryJson)} catch(e) {diaryObj = {}}
-        try {statusObj = JSON.parse(statusJson)} catch(e) {statusObj = {}}
+        try { diaryObj = JSON.parse(diaryJson) } catch (e) { diaryObj = {} }
+        try { statusObj = JSON.parse(statusJson) } catch (e) { statusObj = {} }
 
         var diaries = _normalizeDiaryArray(diaryObj)
-         var statuses = []
-        if (Array.isArray(statusObj.statuses)) statuses = statusObj.statuses
+
+        var statuses = []
+        if (Array.isArray(statusObj)) statuses = statusObj
+        else if (Array.isArray(statusObj.statuses)) statuses = statusObj.statuses
         else if (Array.isArray(statusObj.status)) statuses = statusObj.status
 
-        var statusByDate = {}
+        function dateKey(v) {
+            if (!v) return ""
+            var s = String(v)
+            // 'YYYY-MM-DD HH:mm:ss' or ISO 'YYYY-MM-DDTHH:mm:ss'
+            var d = s.indexOf('T') >= 0 ? s.split('T')[0] : s.split(' ')[0]
+            return d || ""
+        }
 
+        var statusByDate = {}
         for (var i = 0; i < statuses.length; i++) {
-            var s = statuses[i]
-            if (s.createdAt) statusByDate[s.createdAt] = s
+            var st = statuses[i]
+            var key = dateKey(st.createdAt || st.date || st.day)
+            if (key) statusByDate[key] = st
         }
 
         for (var j = 0; j < diaries.length; j++) {
             var d = diaries[j]
-            var has = false
-            if (d.createdAt && statusByDate[d.createdAt]) {
-                d.status = statusByDate[d.createdAt]
-                has = true
+            var key = dateKey(d.createdAt)
+            var st = key ? statusByDate[key] : null
+            if (st) {
+                d.status = st
+                d.hasStatus = true
+            } else {
+                d.hasStatus = false
             }
-            d.hasStatus = has
         }
 
-        return { diaries: diaries }
+        return { diaries: diaries, statusDates: Object.keys(statusByDate), statusByDate: statusByDate}
     }
 
     Dialog {
@@ -212,7 +224,7 @@ Page {
     }
 
     Dialog {
-        id: dateMissMachDialog
+        id: dateMissMatchDialog
         title: qsTr("Date Mismatch")
         standardButtons: Dialog.Ok | Dialog.Cancel
 
@@ -298,7 +310,7 @@ Page {
             title: qsTr("Create Item")
 
             property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
-            property bool hasStatus: !monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
+            property bool hasStatus: (monthGrid.updateTrigger, !monthGrid.hasStatusForDay(dayContextMenu.selectedDay))
 
             MenuItem {
                 text: qsTr("Create Diary")
@@ -313,7 +325,7 @@ Page {
                     if (selectedDate === today) {
                         createDiaryDialog.open()
                     } else {
-                        dateMissMachDialog.open()
+                        dateMissMatchDialog.open()
                     }
                 }
             }
@@ -411,7 +423,10 @@ Page {
             width: 40
             height: 40
 
-            readonly property bool hasStatus: monthGrid.hasStatusForDay(day)
+            readonly property var  dayDiaries: (monthGrid.updateTrigger, monthGrid.monthData[day] || [])
+            readonly property bool hasDiary:   (monthGrid.updateTrigger, monthGrid.hasDiaryForDay(day))
+            readonly property bool hasStatus:  (monthGrid.updateTrigger, monthGrid.hasStatusForDay(day))
+            readonly property bool hasAny: hasDiary || hasStatus
             
             property int day: {
                 var firstDay = new Date(monthGrid.year, monthGrid.month, 1).getDay()
@@ -419,7 +434,6 @@ Page {
                 return (dayNumber > 0 && dayNumber <= new Date(monthGrid.year, monthGrid.month + 1, 0).getDate()) ? dayNumber : 0
             }
             
-            readonly property var dayDiaries: monthGrid.monthData[day] || []
             readonly property bool today: {
                 var now = new Date()
                 return day > 0 && 
@@ -429,9 +443,9 @@ Page {
             }
             
             color: {
-            if (today) return Material.accent
-            if (dayDiaries.length > 0) return Material.color(Material.LightBlue)
-            return Material.backgroundColor
+                if (today) return Material.accent
+                if (hasAny) return Material.color(Material.LightBlue)
+                return Material.backgroundColor
             }  
              border.color: Material.frameColor
             border.width: day > 0 ? 1 : 0
@@ -448,11 +462,22 @@ Page {
                 width: 6
                 height: 6
                 radius: 3
+                color: Material.color(Material.Blue)
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.margins: 2
+                visible: parent.hasDiary
+            }
+
+            Rectangle {
+                width: 6
+                height: 6
+                radius: 3
                 color: Material.color(Material.Red)
                 anchors.bottom: parent.bottom
                 anchors.right: parent.right
                 anchors.margins: 2
-                visible: parent.dayDiaries.length > 0
+                visible: parent.hasStatus
             }
             
             MouseArea {
@@ -493,6 +518,20 @@ Page {
             return false
         }
 
+        function hasDiaryForDay(day) {
+            if (day <= 0) return false
+            var items = monthGrid.monthData[day] || []
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i]
+                if (it && it.contentPath) return true
+            }
+            return false
+        }
+
+        function hasAnyForDay(day) {
+            return monthGrid.hasDiaryForDay(day) || monthGrid.hasStatusForDay(day)
+        }
+
         function _extractStatusFields(statusObj) {
             if (!statusObj) return { mood: null, freeTextMood: null }
             var mood = statusObj.mood !== undefined ? statusObj.mood : null
@@ -530,54 +569,78 @@ Page {
 
         function updateMonthData(jsonString) {
             try {
-                var data = JSON.parse(jsonString)
-                
-                if (data.diaries) {
-                    data = data.diaries
+                var raw = JSON.parse(jsonString)
+
+                var data = raw.diaries ? raw.diaries : raw
+                var statusDates = raw.statusDates || []
+
+                function parseCreatedAtToDate(s) {
+                    if (!s) return null
+                    var str = String(s)
+                    if (str.indexOf('T') >= 0) {
+                        var d = new Date(str)
+                        return isNaN(d) ? null : d
+                    }
+                    var parts = str.split(' ')
+                    var ymd = parts[0].split('-')
+                    if (ymd.length !== 3) return null
+                    var y = Number(ymd[0]), m = Number(ymd[1]) - 1, d = Number(ymd[2])
+                    if (isNaN(y) || isNaN(m) || isNaN(d)) return null
+                    return new Date(y, m, d)
                 }
-                
+
+                function parseYmdToYMD(ymdStr) {
+                    if (!ymdStr) return null
+                    var ymd = ymdStr.split('-')
+                    if (ymd.length !== 3) return null
+                    var y = Number(ymd[0]), m = Number(ymd[1]) - 1, d = Number(ymd[2])
+                    if (isNaN(y) || isNaN(m) || isNaN(d)) return null
+                    return { y: y, m: m, d: d }
+                }
+
                 monthData = {}
-                
-                console.log("Processing", data.length, "diaries")
-                console.log("Current year:", mainUserPage.currentYear, "MonthGrid month:", monthGrid.month)
-                
+
                 for (var i = 0; i < data.length; i++) {
                     var diary = data[i]
-                    if (diary.createdAt) {
-                        var parts = diary.createdAt.split(' ');
-                        var dateParts = parts[0].split('-');
-                        var timeParts = parts[1].split(':');
-                        var dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1], timeParts[2]);
-                        
-                        console.log("Diary:", diary.title)
-                        console.log("Created date parts:", dateParts)
-                        console.log("Created dateObj:", dateObj)
-                        console.log("dateObj year:", dateObj.getFullYear(), "month:", dateObj.getMonth(), "day:", dateObj.getDate())
-                        
-                        if (dateObj.getFullYear() === mainUserPage.currentYear && dateObj.getMonth() === monthGrid.month) {
-                            var day = dateObj.getDate()
-                            
-                            console.log("Adding diary to day:", day)
-                            
-                            if (!monthData[day]) {
-                                monthData[day] = []
-                            }
-                            monthData[day].push(diary)
-                        } else {
-                            console.log("Date mismatch - dateObj year:", dateObj.getFullYear(), "vs current:", mainUserPage.currentYear)
-                            console.log("Date mismatch - dateObj month:", dateObj.getMonth(), "vs monthGrid:", monthGrid.month)
-                        }
-                    } else {
-                        console.warn("Diary missing createdAt:", diary)
+                    var dateObj = parseCreatedAtToDate(diary.createdAt)
+                    if (!dateObj) {
+                        console.warn("Diary missing/invalid createdAt:", diary && diary.title)
+                        continue
+                    }
+                    if (dateObj.getFullYear() === mainUserPage.currentYear && dateObj.getMonth() === monthGrid.month) {
+                        var day = dateObj.getDate()
+                        if (!monthData[day]) monthData[day] = []
+                        monthData[day].push(diary)
                     }
                 }
-                
+
+                for (var k = 0; k < statusDates.length; k++) {
+                    var ymd = parseYmdToYMD(statusDates[k])
+                    if (!ymd) continue
+                    if (ymd.y === mainUserPage.currentYear && ymd.m === monthGrid.month) {
+                        var dayNum = ymd.d
+                        var items = monthData[dayNum] || []
+                        var hasAnyStatus = false
+                        for (var t = 0; t < items.length; t++) {
+                            if (items[t] && (items[t].hasStatus === true || items[t].status)) { hasAnyStatus = true; break }
+                        }
+                        if (!hasAnyStatus) {
+                            if (!monthData[dayNum]) monthData[dayNum] = []
+                            monthData[dayNum].push({
+                                title: "",
+                                contentPath: "",
+                                createdAt: statusDates[k] + " 00:00:00",
+                                status: (raw.statusByDate && raw.statusByDate[statusDates[k]]) || {},
+                                hasStatus: true
+                            })
+                        }
+                    }
+                }
+
                 console.log("Final monthData:", JSON.stringify(monthData))
-                monthDataChanged()
                 updateTrigger++
-                
             } catch (e) {
-                console.error("JSON parse error:", e)
+                console.error("updateMonthData error:", e)
             }
         }
         
