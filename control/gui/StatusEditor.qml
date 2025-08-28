@@ -18,6 +18,12 @@ Page {
     property string statusJson: ""
     property string workspacePath: ""
 
+    
+    function handleActivityChange(index) {
+        // Handle activity change if needed
+        console.log("Activity changed to index: " + index);
+    }
+
 
     property string themeSettings: "light"
 
@@ -57,9 +63,10 @@ Page {
             id: activityLoader
             Layout.preferredWidth: 56
             Layout.fillHeight: true
+            onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
         }
 
-        // 中: サイドパネル（選択に応じて切替）
+       /*  // 中: サイドパネル（選択に応じて切替）
         Frame {
             id: sidePanel
             Layout.preferredWidth: 280
@@ -70,33 +77,19 @@ Page {
                 anchors.fill: parent
                 currentIndex: activityLoader.currentIndex
 
-                // Explorer
                 Column {
                     spacing: 8
                     padding: 8
-                    Label { text: qsTr("Explorer") }
+                    
                 }
-                // Search
-                Column {
-                    spacing: 8
-                    padding: 8
-                    Label { text: qsTr("Search") }
-                    TextField { placeholderText: qsTr("Type to search") }
-                }
-                // Extensions
-                Column {
-                    spacing: 8
-                    padding: 8
-                    Label { text: qsTr("Extensions") }
-                }
-                // Settings
+
                 Column {
                     spacing: 8
                     padding: 8
                     Label { text: qsTr("Settings") }
                 }
             }
-        }
+        } */
 
         // 右: メインエリア（元の内容）
         Pane {
