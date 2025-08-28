@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls.Material
+import ManageMySelf.GUI 1.0
 
 /* global settings */
 

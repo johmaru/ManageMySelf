@@ -6,3 +6,4 @@ MainUserPage 1.0 MainUserPage.qml
 MarkDownViewer 1.0 MarkDownViewer.qml
 MarkEditor 1.0 MarkDownEditor.qml
 StatusEditor 1.0 StatusEditor.qml
+ActivityBar 1.0 ActivityBar.qml
