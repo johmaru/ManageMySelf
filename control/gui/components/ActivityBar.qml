@@ -8,6 +8,7 @@ Pane {
     id: root
 
     property int currentIndex: 0
+    signal activated(int index)
     Layout.preferredWidth: 56
     Layout.fillHeight: true
     padding: 0
@@ -20,6 +21,7 @@ Pane {
 
         Repeater {
             model: [
+                { name: qsTr("ToggleView"), source: "qrc:/icons/toggle-column-svgrepo-com.svg" },
                 { name: qsTr("Save"), icon: "content-save" },
                 { name: qsTr("Settings"), icon: "settings" }
             ]
@@ -30,13 +32,23 @@ Pane {
                 checkable: true
                 checked: index === root.currentIndex
                 ButtonGroup.group: grp
-                display: AbstractButton.TextUnderIcon
+
+                display: (index === 0) ? AbstractButton.IconOnly : AbstractButton.TextUnderIcon
                 text: modelData.name
 
+                icon.source: index === 0 ? modelData.source : ""
+                icon.color: Material.foreground
                 icon.width: 20
                 icon.height: 20
-                Layout.alignment: Qt.AlignHCenter
-                onClicked: root.currentIndex = index
+
+                onClicked: {
+                    if (index !== root.currentIndex) root.currentIndex = index
+                    root.activated(index)
+                }
+
+                ToolTip.visible: (index === 0) && hovered
+                ToolTip.text: modelData.name
+                ToolTip.delay: 500
             }
         }
 

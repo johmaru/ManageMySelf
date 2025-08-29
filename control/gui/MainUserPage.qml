@@ -31,7 +31,28 @@ Page {
     signal updateMonthGridData(string jsonString)
     signal requestNavigateMarkdownEditor(string contentPath)
     signal requestNavigateMarkdownViewer(string contentPath)
-    signal requestStatusEditor(int year, int month, int day, string jsonString, string path)
+    signal requestStatusEditor(int year, int month, int day, string jsonString, string path, int mode)
+
+    property Component headerComponent: ToolBar {
+        RowLayout {
+            anchors.fill: parent
+
+            ToolButton {
+                text: qsTr("File")
+            
+                onClicked: fileMenu.open()
+
+                Menu {
+                    id: fileMenu
+
+                    MenuItem {
+                        text: qsTr("Back to Workspaces")
+                        onTriggered: mainUserPage.backRequested()
+                    }
+                }
+            }
+        }
+    }
 
     onUpdateMonthGridData: function(jsonString) {
         if (monthGrid) {
@@ -205,7 +226,7 @@ Page {
             width: 300
 
             Label {
-                text: qsTr("The selected date does not match the diary entry date. Are you sure you want to continue?")
+                text: qsTr("The selected date does not match the diary entry date.\nAre you sure you want to continue?")
             }
         }
 
@@ -412,7 +433,12 @@ Page {
             var mood = statusObj.mood !== undefined ? statusObj.mood : null
             var freeText = statusObj.free_mood_text !== undefined ? statusObj.free_mood_text
                          : (statusObj.freeMoodText !== undefined ? statusObj.freeMoodText : null)
-            return { mood: mood, freeTextMood: freeText }
+            var sleep_time = statusObj.sleep_time !== undefined ? statusObj.sleep_time
+                           : (statusObj.sleepTime !== undefined ? statusObj.sleepTime : null)
+            var wake_up_time = statusObj.wake_up_time !== undefined ? statusObj.wake_up_time
+                             : (statusObj.wakeUpTime !== undefined ? statusObj.wakeUpTime : null)
+            var temperature = statusObj.temperature !== undefined ? statusObj.temperature : null
+            return { mood: mood, freeTextMood: freeText, sleepTime: sleep_time, wakeUpTime: wake_up_time, temperature: temperature }
         }
 
         function hasMoodForDay(day) {
@@ -588,7 +614,8 @@ Page {
                     mainUserPage.currentMonth,
                     dayContextMenu.selectedDay,
                     dayContextMenu.selectedStatusJson,
-                    mainUserPage.workspacePath
+                    mainUserPage.workspacePath,
+                    1
                 )
             }
         }

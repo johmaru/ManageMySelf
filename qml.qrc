@@ -9,6 +9,7 @@
         <file alias="ManageMySelf/GUI/MarkDownEditor.qml">control/gui/MarkDownEditor.qml</file>
         <file alias="ManageMySelf/GUI/StatusEditor.qml">control/gui/StatusEditor.qml</file>
         <file alias="ManageMySelf/GUI/qmldir">control/gui/qmldir</file>
-        <file alias="ManageMySelf/GUI/ActivityBar.qml">control/gui/components/ActivityBar.qml</file>
+        <file alias="ManageMySelf/GUI/components/ActivityBar.qml">control/gui/components/ActivityBar.qml</file>
+        <file alias="icons/toggle-column-svgrepo-com.svg">control/gui/assets/icons/toggle-column-svgrepo-com.svg</file>
     </qresource>
 </RCC>

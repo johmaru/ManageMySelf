@@ -203,6 +203,7 @@ ApplicationWindow {
                 let result = settings.createStatus(path);
                 if (result === 0) {
                     console.log("Status created successfully");
+                    mainUserPageInstance.reloadMonthData();
                 } else {
                     errorLabel.text = qsTr("Failed to create status");
                     errorDialog.open();
@@ -278,8 +279,8 @@ ApplicationWindow {
                 }
             }
 
-            onRequestStatusEditor: function(year, month, day, jsonString, path) {
-                stackView.push(statusEditorComponent, { year: year, month: month, day: day, statusJson: jsonString, workspacePath: path });
+            onRequestStatusEditor: function(year, month, day, jsonString, path, mode) {
+                stackView.push(statusEditorComponent, { year: year, month: month, day: day, statusJson: jsonString, workspacePath: path, mode: mode });
             }
 
             Component {
