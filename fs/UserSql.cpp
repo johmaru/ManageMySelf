@@ -100,9 +100,9 @@ int UserSql::createUserDatabase(const QString &path) const {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "mood INTEGER NOT NULL, "
                 "free_mood_text TEXT NOT NULL, "
-                "sleep_time INTEGER NOT NULL, "
-                "wake_up_time INTEGER NOT NULL, "
-                "temperature INTEGER, "
+                "sleep_time REAL NOT NULL, "
+                "wake_up_time REAL NOT NULL, "
+                "temperature REAL, "
                 "last_modified DATETIME DEFAULT CURRENT_TIMESTAMP, "
                 "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
@@ -314,7 +314,7 @@ int UserSql::editStatus(int year, int month, int day, const QJsonObject &jsonObj
 
     try {
         SQLite::Database db(m_pathToUserDb.toStdString(), SQLite::OPEN_READWRITE);
-        SQLite::Statement query(db, "UPDATE user_status SET mood = ?, free_mood_text = ?, sleep_time = ?, wake_up_time = ?, temperature = ? WHERE date(created_at) = ?");
+        SQLite::Statement query(db, "UPDATE user_status SET mood = ?, free_mood_text = ?, sleep_time = ?, wake_up_time = ?, temperature = ?, last_modified = CURRENT_TIMESTAMP WHERE date(created_at) = ?");
         query.bind(1, jsonObject["mood"].toInt());
         query.bind(2, jsonObject["free_mood_text"].toString().toStdString());
         query.bind(3, jsonObject["sleep_time"].toDouble());

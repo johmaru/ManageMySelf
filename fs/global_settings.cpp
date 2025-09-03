@@ -261,31 +261,21 @@ int GlobalSettings::createStatus(const QString &path) const {
 int GlobalSettings::editStatus(int year, int month, int day, const QString &jsonString, const QString &path) const {
     if (jsonString.isEmpty()) {
         qWarning() << "JSON string cannot be empty";
-        return -1; // JSON文字列が空の場合のエラーコード
+        return -1;
     }
 
     QJsonDocument doc = QJsonDocument::fromJson(jsonString.toUtf8());
     if (doc.isNull() || !doc.isObject()) {
         qWarning() << "Invalid JSON format";
-        return -2; // JSON形式が無効な場合のエラーコード
+        return -2;
     }
 
     QJsonObject statusObj = doc.object();
-    if (!statusObj.contains("status") || !statusObj["status"].isString()) {
-        qWarning() << "JSON must contain a valid 'status' field";
-        return -3; // 'status'フィールドが無効な場合のエラーコード
-    }
-
-    QString status = statusObj["status"].toString();
-    if (status.isEmpty()) {
-        qWarning() << "Status in JSON cannot be empty";
-        return -4; // JSON内のステータスが空の場合のエラーコード
-    }
 
     QString userDbPath = UserSql::getUserDatabasePath(path);
     if (userDbPath.isEmpty()) {
         qWarning() << "Failed to get user database path for:" << path;
-        return -5; // ユーザーデータベースパスの取得に失敗
+        return -5;
     }
 
     UserSql userSql(userDbPath);
