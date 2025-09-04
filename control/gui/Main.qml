@@ -291,6 +291,12 @@ ApplicationWindow {
                     onBackRequested: function() {
                         stackView.pop();
                     }
+                    onRequestEditStatus: function(year, month, day, jsonString, path) {
+                        let rc = settings.editStatus(year, month, day, jsonString, path);
+                        if (rc === 0) {
+                            mainUserPageInstance.reloadMonthData();
+                        }
+                    }
                 }
             }
         }

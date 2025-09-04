@@ -66,7 +66,7 @@ Page {
                                 wake_up_time: statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute),
                                 temperature: Number(statusEditorPage.status.temperature || 0.0)
                             })
-            settings.editStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
+            requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
         } else if (index === 2) {
             sidePanel.isSelected = true
         }
