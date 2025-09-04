@@ -640,6 +640,24 @@ Page {
         }
     }
 
+    Component {
+        id: cmpShowStatus
+        MenuItem {
+            text: qsTr("Show Status")
+            onTriggered: {
+                dayContextMenu.close()
+                mainUserPage.requestStatusEditor(
+                    mainUserPage.currentYear,
+                    mainUserPage.currentMonth,
+                    dayContextMenu.selectedDay,
+                    dayContextMenu.selectedStatusJson,
+                    mainUserPage.workspacePath,
+                    0
+                )
+            }
+        }
+    }
+
     Menu {
         id: dayContextMenu
 
@@ -740,13 +758,21 @@ Page {
                 __dynItems = []
 
                 const showDiary = showItemMenu.hasDiaryItems
+                const showStatus = monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
 
                 if (showDiary) {
                     var d = cmpShowDiary.createObject(null)
                     showItemMenu.addItem(d)
                     __dynItems.push(d)
                 }
-                if (!showDiary) {
+
+                if (showStatus) {
+                    var s = cmpShowStatus.createObject(null)
+                    showItemMenu.addItem(s)
+                    __dynItems.push(s)
+                } 
+
+                if (!showDiary && !showStatus) {
                     var n = cmpNoItem.createObject(null)
                     showItemMenu.addItem(n)
                     __dynItems.push(n)

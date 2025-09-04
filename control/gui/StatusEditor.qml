@@ -44,31 +44,28 @@ Page {
     }
 
     
-    function handleActivityChange(index) {
-        if (index === 0) {
-            if (sidePanel.isSelected) {
+    function handleActivityChange(key) {
+        switch (key) {
+            case "toggle":
+                sidePanel.isSelected = !sidePanel.isSelected
+                break
+            case "save":
                 sidePanel.isSelected = false
-            } else {
+                var payload = JSON.stringify({
+                    mood: statusEditorPage.mood,
+                    free_mood_text: statusEditorPage.status.free_mood_text || "",
+                    sleep_time: statusEditorPage.toHourPointMinute(statusEditorPage.sleep_hour, statusEditorPage.sleep_minute),
+                    wake_up_time: statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute),
+                    temperature: Number(statusEditorPage.status.temperature || 0.0)
+                })
+                requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
+                break
+            case "settings":
                 sidePanel.isSelected = true
-            }
-        } else if (index === 1) {
-            sidePanel.isSelected = false
-            var sleepDoubleValue = statusEditorPage.toHourPointMinute(statusEditorPage.sleep_hour, statusEditorPage.sleep_minute);
-            statusEditorPage.status.sleep_time = sleepDoubleValue;
-
-            var wakeDoubleValue = statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute);
-            statusEditorPage.status.wake_up_time = wakeDoubleValue;
-
-            var payload = JSON.stringify({
-                                mood: statusEditorPage.mood,
-                                free_mood_text: statusEditorPage.status.free_mood_text || "",
-                                sleep_time: statusEditorPage.toHourPointMinute(statusEditorPage.sleep_hour, statusEditorPage.sleep_minute),
-                                wake_up_time: statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute),
-                                temperature: Number(statusEditorPage.status.temperature || 0.0)
-                            })
-            requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
-        } else if (index === 2) {
-            sidePanel.isSelected = true
+                break
+            case "home":
+                statusEditorPage.backRequested()
+                break
         }
     }
 
@@ -169,10 +166,12 @@ Page {
 
         ActivityBar {
             id: activityLoader
-            Layout.preferredWidth: 56
+            Layout.preferredWidth: 60
             Layout.fillHeight: true
+            mode: statusEditorPage.mode
+            scene: ActivityBar.Scene.StatusEditor
             // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
-            onActivated: function(idx) { statusEditorPage.handleActivityChange(idx) }
+            onActivated: function(key) { statusEditorPage.handleActivityChange(key) }
         }
 
         // サイドパネル
@@ -188,7 +187,7 @@ Page {
             StackLayout {
                 id: sideStack
                 anchors.fill: parent
-                currentIndex: activityLoader.currentIndex === 2 ? 1 : 0
+                currentIndex: activityLoader.currentKey === "settings" ? 1 : 0
 
                 Column {
                     spacing: 8
@@ -225,41 +224,144 @@ Page {
     Component {
         id: showComponent
 
-        ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 12
-                spacing: 12
+        ScrollView {
+            anchors.fill: parent
+            clip: true
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                RowLayout {
-                    Layout.fillWidth: true
+            Flickable {
+                anchors.fill: parent
+                contentWidth: width
+                contentHeight: contentCol.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+
+                Column {
+                    id: contentCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 12
 
                     Label {
-                        text: qsTr("Status Editor for %1-%2-%3")
+                        width: parent.width
+                        padding: 0
+                        topPadding: 0
+                        bottomPadding: 0
+                        text: qsTr("Status for %1-%2-%3")
                             .arg(statusEditorPage.year)
                             .arg(statusEditorPage.month)
                             .arg(statusEditorPage.day)
                         font.pixelSize: 20
-                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
                     }
+
+                    RowLayout {
+                        width: parent.width
+                        spacing: 8
+
+                        Label { text: qsTr("Mood") }
+
+                        Slider {
+                            Layout.fillWidth: true
+                            from: 0; to: 5; stepSize: 1
+                            value: statusEditorPage.mood
+                            enabled: false
+                        }
+
+                        Label { text: getMoodText(statusEditorPage.mood) }
+                    }
+
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Free Mood Text"); font.pixelSize: 20 }
+
+                    ScrollView {
+                            width: Math.min(600, parent.width)
+                            height: 240
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                            
+                            TextArea {
+                                id: freeMoodTextArea
+                                wrapMode: TextArea.Wrap
+                                padding: 0
+                                text: statusEditorPage.status.free_mood_text
+                                readOnly: true
+                            }
+                    }
+
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Sleep Time"); font.pixelSize: 20 }
+
+                    RowLayout {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Label { text: qsTr("Hour") }
+                        SpinBox {
+                            id: sleep_hh
+                            from: 0; to: 23; stepSize: 1
+                            wrap: true
+                            focusPolicy: Qt.StrongFocus
+                            enabled : false
+
+                            value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).hour || 0
+                        }
+                        Label { text: qsTr("Minute") }
+                        Label { text: ":" }
+                        SpinBox {
+                            id: sleep_mm
+                            from: 0; to: 59; stepSize: 1
+                            wrap: true
+                            focusPolicy: Qt.StrongFocus
+                            enabled : false
+
+                            value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).minute || 0
+                        }
+                        Label { text: Qt.formatTime(new Date(2000, 0, 1, sleep_hh.value, sleep_mm.value, 0), "hh:mm") }
+                    }
+
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Wake Up Time"); font.pixelSize: 20 }
+
+                    RowLayout {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Label { text: qsTr("Hour") }
+                        SpinBox {
+                            id: wake_hh
+                            from: 0; to: 23; stepSize: 1
+                            focusPolicy: Qt.StrongFocus
+                            enabled : false
+
+                            value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).hour || 0
+                        }
+                        Label { text: qsTr("Minute") }
+                        Label { text: ":" }
+                        SpinBox {
+                            id: wake_mm
+                            from: 0; to: 59; stepSize: 1
+                            wrap: true
+                            focusPolicy: Qt.StrongFocus
+                            enabled : false
+                            value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).minute || 0
+                        }
+                        Label { text: Qt.formatTime(new Date(2000, 0, 1, wake_hh.value, wake_mm.value, 0), "hh:mm") }
+                    }
+
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Temperature"); font.pixelSize: 20 }
+
+                    RowLayout {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Label { text: qsTr("Value") }
+                        Slider {
+                            id: tempSlider
+                            from: 30.0; to: 45.0; stepSize: 0.1
+                            Layout.preferredWidth: 220
+                            value: statusEditorPage.status.temperature || 37.0
+                            enabled : false
+                        }
+                        Label { text: qsTr("%1 °C").arg((statusEditorPage.status.temperature || 37.0).toFixed(1)) }
+                    }
+
                 }
-
-                RowLayout {
-                    Layout.fillWidth: true
-
-                    Label { text: qsTr("Mood") }
-                    Label { text: getMoodText(statusEditorPage.status.mood) }
-                }
-            
-                TextArea {
-                    Layout.fillWidth: true
-
-                    text: statusEditorPage.status.free_mood_text
-                    readOnly: true
-                }
-
             }
+            
+        }
     }
-
 
     Component {
         id: editComponent
