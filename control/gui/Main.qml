@@ -22,6 +22,8 @@ ApplicationWindow {
     height: settings.windowHeight
 
     Material.theme: settings.theme === "light" ? Material.Light : Material.Dark
+    Material.primary: Material.Blue
+    Material.accent: Material.Blue
 
     title: qsTr("TitleMain")
 
@@ -124,6 +126,9 @@ ApplicationWindow {
                     Layout.fillHeight: true
                     mode: 0
                     scene: ActivityBar.Scene.Main
+                    Material.theme: root.Material.theme
+                    Material.primary: root.Material.primary
+                    Material.accent: root.Material.accent
                     // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
                     onActivated: function(key) { mainContentItem.handleActivityChange(key) }
                 }
@@ -185,7 +190,7 @@ ApplicationWindow {
                         text: qsTr("Text1")
                     }
 
-                    ComboBox {
+                    /* ComboBox {
                         id: workspaceComboBox
                         anchors.left: parent.left
                         anchors.bottom: parent.bottom
@@ -200,7 +205,7 @@ ApplicationWindow {
                             root.handleSelectionChange(index)
                             currentIndex = -1
                         }
-                    }
+                    } */
                 }
             }
         }

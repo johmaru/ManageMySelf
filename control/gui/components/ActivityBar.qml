@@ -12,6 +12,11 @@ Pane {
     property string currentKey: "toggle"
     signal activated(string key)
 
+    background: Rectangle {
+        color: "#00d146"
+        // same color -> color: root.Material.primaryColor
+    }
+
     Loader {
         anchors.fill: parent
         sourceComponent: root.scene === ActivityBar.Scene.Main         ? mainCmp
