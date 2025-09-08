@@ -15,6 +15,9 @@
 #include <qdebug.h>
 #include <qobject.h>
 
+#include "fs/Migration.h"
+#include "fs/AppMigrations.h"
+
 
 
 const QString SETTINGS_FILE_NAME = "settings.json";
@@ -190,6 +193,9 @@ int GlobalSettings::openWorkspace(const QString &path) const {
             qWarning() << "Failed to get user database path for workspace at:" << path;
             return -4; // ユーザーデータベースパスが取得できない場合のエラーコード
         } 
+
+        runMigrations(user_db_path.toStdString(), makeMigrations());
+
         return 0; // 成功
     } else if (exists < 0) {
         qWarning() << "Error checking workspace existence:" << exists;

@@ -1,4 +1,6 @@
 #include "UserSql.h"
+#include "Migration.h"
+#include "AppMigrations.h"
 #include <qcontainerfwd.h>
 #include <qdebug.h>
 #include <SQLiteCpp/Database.h>
@@ -10,65 +12,6 @@
 #include <QRegularExpression>
 #include <QSet>
 
-namespace {
-
-void migrateDiarySchemaIfNeeded(const QString &dbPath) {
-    try {
-        SQLite::Database db(dbPath.toStdString(), SQLite::OPEN_READWRITE);
-        db.setBusyTimeout(3000);
-
-        SQLite::Statement stmt(db, "SELECT sql FROM sqlite_master WHERE type='table' AND name='diary'");
-        QString tableSql;
-        if (stmt.executeStep() && !stmt.getColumn(0).isNull()) {
-            tableSql = QString::fromStdString(stmt.getColumn(0).getText());
-        }
-
-        if (tableSql.contains("title TEXT NOT NULL UNIQUE")) {
-            db.exec("BEGIN");
-            db.exec(
-                "CREATE TABLE diary_new ("
-                "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "  title TEXT NOT NULL,"
-                "  content_path TEXT NOT NULL,"
-                "  entry_date TEXT NOT NULL,"
-                "  last_modified DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
-                ")"
-            );
-            db.exec(
-                "INSERT INTO diary_new (id, title, content_path, entry_date, last_modified, created_at) "
-                "SELECT id, title, content_path, date(created_at), last_modified, created_at FROM diary"
-            );
-            db.exec("DROP TABLE diary");
-            db.exec("ALTER TABLE diary_new RENAME TO diary");
-            db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_diary_title_entry_date ON diary(title, entry_date)");
-            db.exec("COMMIT");
-            qInfo() << "Migrated diary table schema to (title, entry_date) unique.";
-            return;
-        }
-
-        bool hasEntryDate = false;
-        {
-            SQLite::Statement info(db, "PRAGMA table_info(diary)");
-            while (info.executeStep()) {
-                const QString colName = QString::fromStdString(info.getColumn(1).getText());
-                if (colName == "entry_date") {
-                    hasEntryDate = true;
-                    break;
-                }
-            }
-        }
-        if (!hasEntryDate) {
-            db.exec("ALTER TABLE diary ADD COLUMN entry_date TEXT");
-            db.exec("UPDATE diary SET entry_date = date(created_at) WHERE entry_date IS NULL");
-        }
-        db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_diary_title_entry_date ON diary(title, entry_date)");
-    } catch (const SQLite::Exception &e) {
-        qWarning() << "Schema migration check failed:" << e.what();
-    }
-}
-} // namespace
-
 int UserSql::createUserDatabase(const QString &path) const {
     if (path.isEmpty()) {
         qWarning() << "Workspace path has not exists";
@@ -79,32 +22,7 @@ int UserSql::createUserDatabase(const QString &path) const {
     const QString dbFilePath = dir.filePath("user.db");
 
     try {
-        SQLite::Database db(dbFilePath.toStdString(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
-        qInfo() << "User database created successfully at:" << dbFilePath;
-
-        db.exec(
-            "CREATE TABLE IF NOT EXISTS diary ("
-            "  id INTEGER PRIMARY KEY AUTOINCREMENT, "
-            "  title TEXT NOT NULL, "
-            "  content_path TEXT NOT NULL, "
-            "  entry_date TEXT NOT NULL, "
-            "  last_modified DATETIME DEFAULT CURRENT_TIMESTAMP, "
-            "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
-        );
-        // 複合ユニーク
-        db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_diary_title_entry_date ON diary(title, entry_date)");
-
-        qInfo() << "Diary table ensured in the user database.";
-
-        db.exec("CREATE TABLE IF NOT EXISTS user_status ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "mood INTEGER NOT NULL, "
-                "free_mood_text TEXT NOT NULL, "
-                "sleep_time REAL NOT NULL, "
-                "wake_up_time REAL NOT NULL, "
-                "temperature REAL, "
-                "last_modified DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+        runMigrations(dbFilePath.toStdString(), makeMigrations());
 
     } catch (const SQLite::Exception &e) {
         qWarning() << "SQLite error while creating user database:" << e.what();
@@ -113,7 +31,6 @@ int UserSql::createUserDatabase(const QString &path) const {
 
     dir.mkdir("diaries");
     qInfo() << "Diaries directory created at:" << dir.filePath("diaries");
-    migrateDiarySchemaIfNeeded(dbFilePath);
 
     return static_cast<int>(UserSql::UserSqlError::NoError);
 }
@@ -123,8 +40,6 @@ int UserSql::createDiary(int year, int month, int day, const QString &title, con
         qWarning() << "User database path is not set.";
         return static_cast<int>(UserSql::UserSqlError::PathNotSet);
     }
-
-    migrateDiarySchemaIfNeeded(m_pathToUserDb);
 
     const QString date = QString("%1-%2-%3")
                            .arg(year)

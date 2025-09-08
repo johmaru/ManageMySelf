@@ -114,7 +114,13 @@ ApplicationWindow {
                             sidePanel.isSelected = true
                             break;
                     }
-                }
+            }
+
+            StackView.onStatusChanged: {
+                if (StackView.status === StackView.Active) {
+                    activityLoader.currentKey = ""
+                } 
+            }
 
             RowLayout {
                 anchors.fill: parent

@@ -131,6 +131,8 @@ add_executable(ManageMySelf
         fs/JsonSettingsBase.cpp
         fs/SqLiteBase.cpp
         fs/UserSql.cpp
+        fs/AppMigrations.cpp
+        fs/Migration.cpp
         os/SqlOS.cpp
         ${I18N_RCC_OUTPUT}
 )
