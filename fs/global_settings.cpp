@@ -15,6 +15,9 @@
 #include <qdebug.h>
 #include <qobject.h>
 
+#include "fs/Migration.h"
+#include "fs/AppMigrations.h"
+
 
 
 const QString SETTINGS_FILE_NAME = "settings.json";
@@ -190,6 +193,9 @@ int GlobalSettings::openWorkspace(const QString &path) const {
             qWarning() << "Failed to get user database path for workspace at:" << path;
             return -4; // ユーザーデータベースパスが取得できない場合のエラーコード
         } 
+
+        runMigrations(user_db_path.toStdString(), makeMigrations());
+
         return 0; // 成功
     } else if (exists < 0) {
         qWarning() << "Error checking workspace existence:" << exists;
@@ -226,7 +232,7 @@ QStringList GlobalSettings::getSettings(const QString &path) const {
     return settings;
 }
 
-int GlobalSettings::createDiary(const QString &title, const QString &path) const {
+int GlobalSettings::createDiary(int year, int month, int day, const QString &title, const QString &path) const {
     if (title.isEmpty() || path.isEmpty()) {
         qWarning() << "Title and path cannot be empty";
         return -1; // タイトルまたはパスが空の場合のエラーコード
@@ -239,7 +245,47 @@ int GlobalSettings::createDiary(const QString &title, const QString &path) const
     }
 
     UserSql userSql(userDbPath);
-    return userSql.createDiary(title, path);
+    return userSql.createDiary(year, month, day, title, path);
+}
+
+int GlobalSettings::createStatus(const QString &path) const {
+    if (path.isEmpty()) {
+        qWarning() << "Path cannot be empty";
+        return -1; // パスが空の場合のエラーコード
+    }
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path for:" << path;
+        return -2; // ユーザーデータベースパスの取得に失敗
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.createStatus();
+}
+
+int GlobalSettings::editStatus(int year, int month, int day, const QString &jsonString, const QString &path) const {
+    if (jsonString.isEmpty()) {
+        qWarning() << "JSON string cannot be empty";
+        return -1;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(jsonString.toUtf8());
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "Invalid JSON format";
+        return -2;
+    }
+
+    QJsonObject statusObj = doc.object();
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path for:" << path;
+        return -5;
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.editStatus(year, month, day, statusObj);
 }
 
 QString GlobalSettings::getMonthUserDiarySqlData(int year, int month, const QString &path) const {
@@ -258,7 +304,35 @@ QString GlobalSettings::getMonthUserDiarySqlData(int year, int month, const QStr
     return userSql.getDiariesByMonthJson(year, month);
 }
 
+QString GlobalSettings::getMonthUserStatusData(int year, int month, const QString &path) const {
+    if (year < 1 || month < 1 || month > 12) {
+        qWarning() << "Invalid year or month for status data retrieval.";
+        return QString(); // 無効な年または月の場合は空の文字列を返す
+    }
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path.";
+        return QString(); // ユーザーデータベースパスの取得に失敗
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.getStatusByMonthJson(year, month);
+}
+
 QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
+
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists() || !fileInfo.isFile()) {
+        qWarning() << "Invalid markdown file path:" << filePath;
+        return QString(); // 無効なファイルパスの場合は空の文字列を返す
+    }
+
+    if (fileInfo.size() == 0) {
+        qInfo() << "[Markdown] File exists but empty (0 bytes):" << filePath;
+        return QStringLiteral("# (Empty Diary)\n\n");
+    }
+
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qWarning() << "Could not open markdown file:" << filePath;
@@ -266,7 +340,9 @@ QString GlobalSettings::loadMarkdownFile(const QString &filePath) const {
     }
 
     QTextStream in(&file);
-    return in.readAll();
+    QString content = in.readAll();
+    qInfo() << "[Markdown] Loaded:" << content;
+    return content;
 }
 
 int GlobalSettings::writeMarkdownFile(const QString &filePath, const QString &content) const {

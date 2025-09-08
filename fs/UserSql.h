@@ -35,13 +35,27 @@ class UserSql : public SqLiteBase {
 
         bool isTodayDiaryExists(const QString &date) const;
 
-        int createDiary(const QString &title,const QString &path) const;
+        bool isDayDiaryExists(int year, int month, int day) const;
+
+        bool isTodayStatusExists(const QString &date) const;
+
+        bool isEqualTodayAndCreateAtForDiary(const QString &date) const;
+
+        bool isEqualTodayAndCreateAtForStatus(const QString &date) const;
+
+        int createDiary(int year, int month, int day, const QString &title, const QString &path) const;
 
         int updateDiary(const QString &title, const QString &newTitle, const QString &newContentPath) const;
+
+        int createStatus() const;
+
+        int editStatus(int year, int month, int day, const QJsonObject &jsonObject) const;
 
         QString getDiariesByDate(const QString &date) const;
 
         QString getDiariesByMonthJson(int year, int month) const;
+
+        QString getStatusByMonthJson(int year, int month) const;
 
 private:
       QString m_pathToUserDb;

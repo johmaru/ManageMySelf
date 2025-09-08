@@ -1,8 +1,10 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls.Material
+import ManageMySelf.GUI 1.0
 
 /* global settings */
 
@@ -20,6 +22,8 @@ ApplicationWindow {
     height: settings.windowHeight
 
     Material.theme: settings.theme === "light" ? Material.Light : Material.Dark
+    Material.primary: Material.Blue
+    Material.accent: Material.Blue
 
     title: qsTr("TitleMain")
 
@@ -46,6 +50,7 @@ ApplicationWindow {
         id: mainContent
 
         Item {
+            id: mainContentItem
             property Component headerComponent: ToolBar {
                 RowLayout {
                     anchors.fill : parent
@@ -94,28 +99,119 @@ ApplicationWindow {
                 }
             }
 
-            Label {
-                anchors.centerIn: parent
-
-                text: qsTr("Text1")
+            function handleActivityChange(key) {
+                    switch (key) {
+                        case "toggle":
+                            sidePanel.isSelected = !sidePanel.isSelected
+                            break;
+                        case "createWorkspace":
+                            stackView.push(createWorkspaceComponent);
+                            break;
+                        case "openWorkspace":
+                            stackView.push(openWorkspaceComponent);
+                            break;
+                        case "settings":
+                            sidePanel.isSelected = true
+                            break;
+                    }
             }
 
-            ComboBox {
-                id: workspaceComboBox
+            StackView.onStatusChanged: {
+                if (StackView.status === StackView.Active) {
+                    activityLoader.currentKey = ""
+                } 
+            }
 
-                anchors.left: parent.left
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: 12
-                anchors.bottomMargin: 12
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
 
-                model: [qsTr("WorkspaceCreateNew"), qsTr("WorkSpaceOpen")]
+                ActivityBar {
+                    id: activityLoader
+                    Layout.preferredWidth: 120
+                    Layout.fillHeight: true
+                    mode: 0
+                    scene: ActivityBar.Scene.Main
+                    Material.theme: root.Material.theme
+                    Material.primary: root.Material.primary
+                    Material.accent: root.Material.accent
+                    // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
+                    onActivated: function(key) { mainContentItem.handleActivityChange(key) }
+                }
 
-                currentIndex: -1
-                displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
+                // サイドパネル
+                Frame {
+                    id: sidePanel
+                    Layout.preferredWidth: 280
+                    Layout.fillHeight: true
 
-                onActivated: function(index) {
-                    handleSelectionChange(index)
-                    currentIndex = -1
+                    property bool isSelected: false
+
+                    visible: isSelected
+
+                    StackLayout {
+                        id: sideStack
+                        anchors.fill: parent
+                        currentIndex: activityLoader.currentKey === "settings" ? 1 : 0
+
+                        Column {
+                            spacing: 8
+                            padding: 8
+                        }
+
+                        Column {
+                            spacing: 8
+                            padding: 8
+                            Label { text: qsTr("Settings") }
+                            Label { text: qsTr("Currently does not support this feature") }
+                        }
+                    }
+                }
+
+                Pane {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    padding: 0
+                    topPadding: 0
+                    bottomPadding: 0
+                    leftPadding: 0
+                    rightPadding: 0
+
+                    Loader {
+                        id: mainContentLoader
+                        anchors.fill: parent
+                        sourceComponent: mainMenuComponent
+                    }
+                }
+            }
+
+            Component {
+                id: mainMenuComponent
+                 Item {
+                    anchors.fill: parent
+
+                    Label {
+                        anchors.centerIn: parent
+                        text: qsTr("Text1")
+                    }
+
+                    /* ComboBox {
+                        id: workspaceComboBox
+                        anchors.left: parent.left
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: 12
+                        anchors.bottomMargin: 12
+
+                        model: [qsTr("WorkspaceCreateNew"), qsTr("WorkSpaceOpen")]
+                        currentIndex: -1
+                        displayText: currentIndex === -1 ? qsTr("WorkSpaceSelect") : currentText
+
+                        onActivated: function(index) {
+                            root.handleSelectionChange(index)
+                            currentIndex = -1
+                        }
+                    } */
                 }
             }
         }
@@ -187,22 +283,45 @@ ApplicationWindow {
                     mainUserPageInstance.userName = "Unknown";
                 }
             }
-            onRequestCreateDiary: function(title, path) {
-                let result = settings.createDiary(title, path);
+            onRequestCreateDiary: function(year, month, day, title, path) {
+                let result = settings.createDiary(year, month, day, title, path);
                 if (result === 0) {
                     console.log("Diary created successfully");
+                    mainUserPageInstance.reloadMonthData();
                 } else {
                     errorLabel.text = qsTr("Failed to create diary");
                     errorDialog.open();
                 }
             }
+
+            onRequestCreateStatus: function(path) {
+                let result = settings.createStatus(path);
+                if (result === 0) {
+                    console.log("Status created successfully");
+                    mainUserPageInstance.reloadMonthData();
+                } else {
+                    errorLabel.text = qsTr("Failed to create status");
+                    errorDialog.open();
+                }
+            }
+
             onRequestMonthUserDiarySqlData: function(year, month, path) {
                 let sqlData = settings.getMonthUserDiarySqlData(year, month, path);
                 if (sqlData) {
                     console.log("Retrieved diary data for", year, month, ":", sqlData);
-                    mainUserPageInstance.updateMonthGridData(sqlData);
+                    mainUserPageInstance.handleDiaryData(sqlData);
                 } else {
                     errorLabel.text = qsTr("Failed to retrieve diary data");
+                    stackView.pop();
+                }
+            }
+
+            onRequestMonthUserStatusData: function(year, month, path) {
+                let statusData = settings.getMonthUserStatusData(year, month, path);
+                if (statusData) {
+                    mainUserPageInstance.handleStatusData(statusData);
+                } else {
+                    errorLabel.text = qsTr("Failed to retrieve status data");
                     stackView.pop();
                 }
             }
@@ -225,13 +344,8 @@ ApplicationWindow {
                     }
                     onRequestLoadMarkdownFile: function(path) {
                         let content = settings.loadMarkdownFile(path);
-                        if (content) {
                             markdownEditorPage.rawMarkdownContent = content;
                             markdownEditorPage.markdownContentPath = path;
-                        } else {
-                            errorLabel.text = qsTr("Failed to load markdown file");
-                            errorDialog.open();
-                        }
                     }
                     onRequestWriteMarkdownFile: function(path, content) {
                         let result = settings.writeMarkdownFile(path, content);
@@ -255,11 +369,27 @@ ApplicationWindow {
                     }
                     onRequestLoadMarkdownFile: function(path) {
                         let content = settings.loadMarkdownFile(path);
-                        if (content) {
                             markdownViewerPage.updateMarkdownContent(content);
-                        } else {
-                            errorLabel.text = qsTr("Failed to load markdown file");
-                            errorDialog.open();
+                    }
+                }
+            }
+
+            onRequestStatusEditor: function(year, month, day, jsonString, path, mode) {
+                stackView.push(statusEditorComponent, { year: year, month: month, day: day, statusJson: jsonString, workspacePath: path, mode: mode });
+            }
+
+            Component {
+                id: statusEditorComponent
+
+                StatusEditor {
+                    id: statusEditorPage
+                    onBackRequested: function() {
+                        stackView.pop();
+                    }
+                    onRequestEditStatus: function(year, month, day, jsonString, path) {
+                        let rc = settings.editStatus(year, month, day, jsonString, path);
+                        if (rc === 0) {
+                            mainUserPageInstance.reloadMonthData();
                         }
                     }
                 }
@@ -271,64 +401,170 @@ ApplicationWindow {
         id: openWorkspaceComponent
 
         Item {
-            property var workspaceModel: settings.getWorkspaces()
+            id: openWorkspaceItem
 
-            ColumnLayout{
+            property var settingsRef: settings
+            property var allWorkspaces: []
+            property var workspaceModel: allWorkspaces
+            property string pendingDeleteName: ""
+
+            function refreshModel() {
+                allWorkspaces = openWorkspaceItem.settingsRef.getWorkspaces();
+                applyFilter();
+            }
+
+            function applyFilter() {
+                const q = searchField.text ? searchField.text.toLowerCase() : "";
+                if (!q) {
+                    workspaceModel = allWorkspaces;
+                } else {
+                    // allWorkspaces is expected to be an array of names
+                    workspaceModel = allWorkspaces.filter(function(name) { return String(name).toLowerCase().indexOf(q) !== -1; });
+                }
+            }
+
+            ColumnLayout {  
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 10
+                anchors.margins: 16
+                spacing: 12
+                Component.onCompleted: openWorkspaceItem.refreshModel()
 
-
-                Label {
-                    text: qsTr("Open Workspace")
-                    font.pixelSize: 20
-                    Layout.alignment: Qt.AlignHCenter
+                // Header
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Label {
+                        text: qsTr("Open Workspace")
+                        font.pixelSize: 22
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+                    Button {
+                        text: qsTr("Refresh")
+                        onClicked: openWorkspaceItem.refreshModel()
+                    }
                 }
 
-                ScrollView {
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    TextField {
+                        id: searchField
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Search workspaces...")
+                        onTextChanged: openWorkspaceItem.applyFilter()
+                        selectByMouse: true
+                    }
+                    Button {
+                        text: qsTr("Open Selected")
+                        enabled: workspaceListView.currentIndex >= 0 && workspaceListView.count > 0
+                        onClicked: {
+                            const idx = workspaceListView.currentIndex;
+                            if (idx < 0) return;
+                            const name = openWorkspaceItem.workspaceModel[idx];
+                            const workspace = openWorkspaceItem.settingsRef.getWorkspaceWithName(name);
+                            stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
+                        }
+                    }
+                }
+
+                Frame {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    clip: true
+                    padding: 0
 
-                    ListView {
-                        id: workspaceListView
-                        model: workspaceModel
-                        spacing: 5
-                        delegate: Item {
-                            width: parent.width
-                            height: 40
+                    ScrollView {
+                        anchors.fill: parent
+                        clip: true
 
-                            RowLayout {
-                                anchors.fill: parent
-                                spacing: 10
+                        ListView {
+                            id: workspaceListView
+                            anchors.fill: parent
+                            model: openWorkspaceItem.workspaceModel
+                            spacing: 0
+                            currentIndex: -1
+                            boundsBehavior: Flickable.StopAtBounds
+                            highlightFollowsCurrentItem: false
+                            delegate: Item {
+                                id: rowDelegate
+                                required property var modelData
+                                width: ListView.view.width
+                                implicitHeight: card.implicitHeight
 
-                                Label {
-                                    text: modelData
-                                    Layout.fillWidth: true
-                                    verticalAlignment: Label.AlignVCenter
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: ListView.isCurrentItem ? Qt.rgba(0,0,0,0.08) : "transparent"
                                 }
 
-                                Button {
-                                    text: qsTr("Open")
-                                    onClicked: {
-                                       let workspace = settings.getWorkspaceWithName(modelData);
-                                        console.log("Opening workspace:", workspace[1]);
-                                        stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
+                                ColumnLayout {
+                                    id: card
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.margins: 8
+                                    spacing: 4
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+                                        Label {
+                                            text: rowDelegate.modelData
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                        Button {
+                                            text: qsTr("Open")
+                                            onClicked: {
+                                                const ws = openWorkspaceItem.settingsRef.getWorkspaceWithName(rowDelegate.modelData);
+                                                stackView.push(mainUserPageComponent, { workspacePath: ws[1] });
+                                            }
+                                        }
+                                        Button {
+                                            text: qsTr("Delete")
+                                            onClicked: {
+                                                openWorkspaceItem.pendingDeleteName = rowDelegate.modelData;
+                                                deleteConfirmDialog.open();
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        Layout.fillWidth: true
+                                        text: {
+                                            var ws = openWorkspaceItem.settingsRef.getWorkspaceWithName(rowDelegate.modelData);
+                                            return ws && ws.length > 1 ? ws[1] : "";
+                                        }
+                                        color: Material.hintTextColor
+                                        elide: Text.ElideMiddle
+                                    }
+                                    Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.rgba(0,0,0,0.1) }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    z: -1
+                                    onClicked: function(mouse) {
+                                        var pt = workspaceListView.mapFromItem(rowDelegate, mouse.x, mouse.y);
+                                        workspaceListView.currentIndex = workspaceListView.indexAt(pt.x, pt.y);
+                                    }
+                                    onDoubleClicked: {
+                                        const ws = openWorkspaceItem.settingsRef.getWorkspaceWithName(rowDelegate.modelData);
+                                        stackView.push(mainUserPageComponent, { workspacePath: ws[1] });
                                     }
                                 }
+                            }
 
-                                Button {
-                                    text: qsTr("Delete")
-                                    onClicked: {
-                                        console.log("Deleting workspace:", modelData);
-                                        let result = settings.deleteWorkspace(modelData);
-                                        if (result === 0) {
-                                            console.log("Workspace deleted successfully");
-                                            workspaceListView.model = settings.getWorkspaces();
-                                        } else {
-                                            errorLabel.text = qsTr("Failed to delete workspace");
-                                            errorDialog.open();
-                                        }
+                            Loader {
+                                anchors.centerIn: parent
+                                active: workspaceListView.count === 0
+                                sourceComponent: Column {
+                                    spacing: 8
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    Label { text: qsTr("No workspaces to show") }
+                                    Label {
+                                        text: searchField.text && searchField.text.length > 0
+                                              ? qsTr("Try a different search or clear the filter")
+                                              : qsTr("Use 'Open from Folder' to import, or create one from the main menu")
+                                        color: Material.hintTextColor
                                     }
                                 }
                             }
@@ -338,36 +574,59 @@ ApplicationWindow {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 10
-
+                    spacing: 8
                     Button {
                         text: qsTr("Open from Folder")
-                        onClicked: {
-                            folderDialog.open();
-                        }
+                        onClicked: folderDialog.open()
                     }
-
-                    FolderDialog {
-                        id: folderDialog
-                        title: qsTr("Select Workspace Folder")
-                        onAccepted: {
-                            var path = folderDialog.selectedFolder.toString();
-                            if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
-                                path = path.substring(8);
-                            }
-                            if (Qt.platform.os === "windows" && path.startsWith('/')) {
-                                path = path.substring(1);
-                            }
-                            console.log("Selected folder path:", path);
-                        }
-                    }
-
+                    Item { Layout.fillWidth: true }
                     Button {
                         text: qsTr("Back")
                         onClicked: stackView.pop()
                     }
                 }
+            }
+
+            FolderDialog {
+                id: folderDialog
+                title: qsTr("Select Workspace Folder")
+                onAccepted: {
+                    var path = folderDialog.selectedFolder.toString();
+                    if (Qt.platform.os === "windows" && path.startsWith('file:///')) {
+                        path = path.substring(8);
+                    }
+                    if (Qt.platform.os === "windows" && path.startsWith('/')) {
+                        path = path.substring(1);
+                    }
+                    console.log("Selected folder path:", path);
+                }
+            }
+
+            Dialog {
+                id: deleteConfirmDialog
+                title: qsTr("Delete workspace?")
+                modal: true
+                standardButtons: Dialog.Ok | Dialog.Cancel
+                contentItem: Column {
+                    width: Math.min(440, root.width - 64)
+                    spacing: 8
+                    Label {
+                        text: qsTr("Are you sure you want to delete '%1'? This cannot be undone.")
+                              .arg(openWorkspaceItem.pendingDeleteName)
+                        wrapMode: Text.WordWrap
+                    }
+                }
+                onAccepted: {
+                    const result = openWorkspaceItem.settingsRef.deleteWorkspace(openWorkspaceItem.pendingDeleteName);
+                    if (result === 0) {
+                        openWorkspaceItem.refreshModel();
+                    } else {
+                        errorLabel.text = qsTr("Failed to delete workspace");
+                        errorDialog.open();
+                    }
+                    openWorkspaceItem.pendingDeleteName = "";
+                }
+                onRejected: openWorkspaceItem.pendingDeleteName = ""
             }
         }
     }
@@ -392,13 +651,13 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: parent
 
-        Label {
+        contentItem: Label {
             text: qsTr("MessageDialogText")
             horizontalAlignment: Text.AlignHCenter
         }
 
         onAccepted: {
-            forceClose = true;
+            root.forceClose = true;
             root.close();
         }
     }
@@ -410,7 +669,7 @@ ApplicationWindow {
         standardButtons: Dialog.Ok
         anchors.centerIn: parent
 
-        Label {
+        contentItem: Label {
             id: errorLabel
             text: qsTr("An error occurred")
             horizontalAlignment: Text.AlignHCenter

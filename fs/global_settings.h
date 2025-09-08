@@ -31,8 +31,11 @@ class GlobalSettings final :public QObject,  public JsonSettingsBase {
 public slots:
     Q_INVOKABLE int createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path);
     Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
-    Q_INVOKABLE int createDiary(const QString &title, const QString &path) const;
+    Q_INVOKABLE int createDiary(int year, int month, int day, const QString &title, const QString &path) const;
+    Q_INVOKABLE int createStatus(const QString &path) const;
+    Q_INVOKABLE int editStatus(int year, int month, int day, const QString &jsonString, const QString &path) const;
     Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString &path) const;
+    Q_INVOKABLE QString getMonthUserStatusData(int year, int month, const QString &path) const;
     Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
     Q_INVOKABLE int writeMarkdownFile(const QString &filePath, const QString &content) const;
 

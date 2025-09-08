@@ -2,11 +2,14 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file alias="Main.qml">control/gui/Main.qml</file>
-        <file alias="CreateWorkspaceForm.qml">control/gui/CreateWorkspaceForm.qml</file>
-        <file alias="Settings.qml">control/gui/Settings.qml</file>
-        <file alias="MainUserPage.qml">control/gui/MainUserPage.qml</file>
-        <file alias="MarkDownViewer.qml">control/gui/MarkDownViewer.qml</file>
-        <file alias="MarkDownEditor.qml">control/gui/MarkDownEditor.qml</file>
-        <file alias="qmldir">control/gui/qmldir</file>
+        <file alias="ManageMySelf/GUI/CreateWorkspaceForm.qml">control/gui/CreateWorkspaceForm.qml</file>
+        <file alias="ManageMySelf/GUI/Settings.qml">control/gui/Settings.qml</file>
+        <file alias="ManageMySelf/GUI/MainUserPage.qml">control/gui/MainUserPage.qml</file>
+        <file alias="ManageMySelf/GUI/MarkDownViewer.qml">control/gui/MarkDownViewer.qml</file>
+        <file alias="ManageMySelf/GUI/MarkDownEditor.qml">control/gui/MarkDownEditor.qml</file>
+        <file alias="ManageMySelf/GUI/StatusEditor.qml">control/gui/StatusEditor.qml</file>
+        <file alias="ManageMySelf/GUI/qmldir">control/gui/qmldir</file>
+        <file alias="ManageMySelf/GUI/components/ActivityBar.qml">control/gui/components/ActivityBar.qml</file>
+        <file alias="icons/toggle-column-svgrepo-com.svg">control/gui/assets/icons/toggle-column-svgrepo-com.svg</file>
     </qresource>
 </RCC>
