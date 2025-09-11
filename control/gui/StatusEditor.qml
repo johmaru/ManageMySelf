@@ -61,8 +61,9 @@ Page {
                 requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
                 break
             case "settings":
-                sidePanel.isSelected = true
-                break
+                if (sidePanel.isSelected) sidePanel.isSelected = false
+                            else sidePanel.isSelected = true
+                            break
             case "home":
                 statusEditorPage.backRequested()
                 break

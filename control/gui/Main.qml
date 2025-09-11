@@ -111,7 +111,8 @@ ApplicationWindow {
                             stackView.push(openWorkspaceComponent);
                             break;
                         case "settings":
-                            sidePanel.isSelected = true
+                            if (sidePanel.isSelected) sidePanel.isSelected = false
+                            else sidePanel.isSelected = true
                             break;
                     }
             }
@@ -135,6 +136,7 @@ ApplicationWindow {
                     Material.theme: root.Material.theme
                     Material.primary: root.Material.primary
                     Material.accent: root.Material.accent
+                    theme: settings.theme
                     // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
                     onActivated: function(key) { mainContentItem.handleActivityChange(key) }
                 }

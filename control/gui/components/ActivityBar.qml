@@ -10,10 +10,14 @@ Pane {
     property int scene: ActivityBar.Scene.StatusEditor
     property int mode: 0 // 0=normal, 1=edit. If navigated a page that doesn't support the mode feature, the mode will be 0
     property string currentKey: "toggle"
+    property string theme: "light" // "light" or "dark"
+    property string accentColor: "#00d146"
     signal activated(string key)
 
     background: Rectangle {
-        color: "#00d146"
+        color: root.theme === "light" ? "#c0c0c0"
+               : root.theme === "dark"  ? "#3d3a3a"
+                                        : root.accentColor
         // same color -> color: root.Material.primaryColor
     }
 
