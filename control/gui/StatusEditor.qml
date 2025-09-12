@@ -29,6 +29,9 @@ Page {
     property int wake_hour: 0
     property int wake_minute: 0
 
+    property var theme
+    property var activityBarTheme: "default" // "default", "#rrggbb"
+
     function toHourPointMinute(h, m) {
         return Number(h + "." + String(m).padStart(2, '0'))
     }
@@ -167,10 +170,12 @@ Page {
 
         ActivityBar {
             id: activityLoader
-            Layout.preferredWidth: 60
+            Layout.preferredWidth: 110
             Layout.fillHeight: true
             mode: statusEditorPage.mode
             scene: ActivityBar.Scene.StatusEditor
+            theme: statusEditorPage.themeSettings
+            ab_theme: statusEditorPage.activityBarTheme
             // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
             onActivated: function(key) { statusEditorPage.handleActivityChange(key) }
         }

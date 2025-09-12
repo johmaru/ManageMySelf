@@ -10,21 +10,37 @@ Pane {
     property int scene: ActivityBar.Scene.StatusEditor
     property int mode: 0 // 0=normal, 1=edit. If navigated a page that doesn't support the mode feature, the mode will be 0
     property string currentKey: "toggle"
-    property string theme: "light" // "light" or "dark"
+    property string theme: "light" // "light", "dark"
+    property string ab_theme: "default" 
     property string accentColor: "#00d146"
     signal activated(string key)
 
+    property string colorCode: ""
+
     background: Rectangle {
-        color: root.theme === "light" ? "#c0c0c0"
-               : root.theme === "dark"  ? "#3d3a3a"
-                                        : root.accentColor
+        color: root.theme === root.setThemeColor(root.ab_theme), root.colorCode
         // same color -> color: root.Material.primaryColor
+    }
+
+    function setThemeColor(ab_theme) {
+        if (ab_theme === "default") {
+            switch (theme) {
+                case "light":
+                    root.colorCode = "#c0c0c0"
+                    break;
+                case "dark":
+                    root.colorCode = "#9c202020"
+                    break;
+            }
+        } else {
+            root.colorCode = ab_theme
+        }
     }
 
     Loader {
         anchors.fill: parent
         sourceComponent: root.scene === ActivityBar.Scene.Main         ? mainCmp
-                        : root.scene === ActivityBar.Scene.MainUserPage ? null
+                        : root.scene === ActivityBar.Scene.MainUserPage ? mainUserPageCmp
                         : root.scene === ActivityBar.Scene.StatusEditor ? statusEditorCmp
                         : null
     }
@@ -47,6 +63,9 @@ Pane {
             ]
 
             delegate: ToolButton {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: false
+
                 required property var modelData
                 property string key: modelData.key
 
@@ -97,10 +116,65 @@ Pane {
             ]
 
             delegate: ToolButton {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: false
+
                 required property var modelData
                 property string key: modelData.key
 
                 visible: modelData.key !== "save" || root.mode === 1
+
+                checkable: true
+                checked: key === root.currentKey
+                ButtonGroup.group: grp
+
+                display: modelData.display === "iconOnly" ? AbstractButton.IconOnly
+                                                          : AbstractButton.TextUnderIcon
+                text: modelData.name
+
+                icon.source: modelData.iconSource || ""
+                icon.name: modelData.iconName || ""
+                icon.color: Material.foreground
+                icon.width: 20
+                icon.height: 20
+
+                onClicked: {
+                    if (key !== root.currentKey) root.currentKey = key
+                    root.activated(key)
+                }
+
+                ToolTip.visible: modelData.display === "iconOnly" && hovered
+                ToolTip.text: modelData.name
+                ToolTip.delay: 500
+            }
+        }
+
+        Item { Layout.fillHeight: true }
+    }
+    }
+
+    Component {
+        id: mainUserPageCmp
+
+        ColumnLayout {
+        anchors.fill: parent
+        spacing: 4
+
+        ButtonGroup { id: grp; exclusive: true }
+
+        Repeater {
+            model: [
+                { key: "toggle",  name: qsTr("ToggleView"),  iconSource: "qrc:/icons/toggle-column-svgrepo-com.svg", display: "iconOnly" },
+                { key: "settings",name: qsTr("Settings"),    iconName: "settings",                                display: "textUnder" },
+                { key: "back",    name: qsTr("Back"),        iconName: "arrow-left",                              display: "textUnder" }
+            ]
+
+            delegate: ToolButton {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: false
+
+                required property var modelData
+                property string key: modelData.key
 
                 checkable: true
                 checked: key === root.currentKey

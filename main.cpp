@@ -42,6 +42,12 @@ int main(int argc, char *argv[]) {
 
     const QString filePath = settings->getFilePath();
 
+    if (!filePath.isEmpty() || settings->loadFromFile(filePath)) {
+        if (settings->migrationJson(filePath) != 0) {
+            qWarning() << "Failed to migrate settings file:" << filePath;
+        }
+    }
+
     if (filePath.isEmpty() || !settings->loadFromFile(filePath)) {
         qWarning() << "Could not load settings from" << filePath << ". Using default settings and creating a new file.";
         if (!filePath.isEmpty()) {
@@ -59,7 +65,6 @@ int main(int argc, char *argv[]) {
     } else {
         qInfo() << "Main database is ready.";
     }
-
 
 
     settings->initialize(&engine);

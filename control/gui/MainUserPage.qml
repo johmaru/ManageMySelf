@@ -15,11 +15,14 @@ Page {
     property int currentMonth: new Date().getMonth() + 1
 
     property var themeSettings: undefined
+    property var activityBarThemeSettings: undefined
 
     property string _pendingDiaryJson: ""
     property string _pendingStatusJson: ""
     property bool _diaryArrived: false
     property bool _statusArrived: false
+
+    property var monthGridRef: null
 
     signal showError(string message)
     signal requestGetUserName(string path)
@@ -55,8 +58,9 @@ Page {
     }
 
     onUpdateMonthGridData: function(jsonString) {
-        if (monthGrid) {
-            monthGrid.updateMonthData(jsonString)
+        var mg = mainUserPage.monthGridRef
+        if (mg) {
+            mg.updateMonthData(jsonString)
         } else {
             console.error("MonthGrid not found")
         }
@@ -67,7 +71,12 @@ Page {
         console.log("Today's date:", new Date())
         console.log("JavaScript getMonth():", new Date().getMonth())
         console.log("Current month property:", currentMonth)
-        console.log("MonthGrid month:", monthGrid.month)
+        var mg = mainUserPage.monthGridRef
+        if (!mg) {
+            console.error("MonthGrid not found")
+        } else {
+            console.log("MonthGrid month:", mg.month)
+        }
         mainUserPage.requestGetSettings(mainUserPage.workspacePath);
     }
 
@@ -94,8 +103,9 @@ Page {
     }
 
     function reloadMonthData() {
-        if (monthGrid) {
-            monthGrid.loadMonthData();
+        var mg = mainUserPage.monthGridRef
+        if (mg) {
+            mg.loadMonthData();
         }
     }
 
@@ -200,11 +210,15 @@ Page {
                 mainUserPage.showError(qsTr("Title cannot be empty"))
                 return
             }
-
-            mainUserPage.requestCreateDiary(monthGrid.year, monthGrid.month + 1, monthGrid.currentDay, title, mainUserPage.workspacePath)
+            var mg = mainUserPage.monthGridRef
+            if (!mg) {
+                mainUserPage.showError(qsTr("MonthGrid not found"))
+                return
+            }
+            mainUserPage.requestCreateDiary(mg.year, mg.month + 1, mg.currentDay, title, mainUserPage.workspacePath)
 
             Qt.callLater(function() {
-                monthGrid.loadMonthData()
+                mg.loadMonthData()
             })
             
             diaryTitleField.text = ""
@@ -279,12 +293,96 @@ Page {
         text: qsTr("Welcome") + " " + mainUserPage.userName
     }
 
+    function handleActivityChange(key) {
+                    switch (key) {
+                        case "toggle":
+                            sidePanel.isSelected = !sidePanel.isSelected
+                            break;
+                        case "settings":
+                            if (sidePanel.isSelected) sidePanel.isSelected = false
+                            else sidePanel.isSelected = true
+                            break;
+                        case "back":
+                            mainUserPage.backRequested()
+                            break;
+                    }
+            }
 
-    ColumnLayout {
-        anchors.topMargin: 20
-        anchors.top: welcomeLabel.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                ActivityBar {
+                    id: activityLoader
+                    Layout.preferredWidth: 120
+                    Layout.fillHeight: true
+                    mode: 0
+                    scene: ActivityBar.Scene.MainUserPage
+                    theme: mainUserPage.themeSettings
+                    ab_theme: mainUserPage.activityBarThemeSettings
+                    // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
+                    onActivated: function(key) { mainUserPage.handleActivityChange(key) }
+                }
+
+                // サイドパネル
+                Frame {
+                    id: sidePanel
+                    Layout.preferredWidth: 280
+                    Layout.fillHeight: true
+
+                    property bool isSelected: false
+
+                    visible: isSelected
+
+                    StackLayout {
+                        id: sideStack
+                        anchors.fill: parent
+                        currentIndex: activityLoader.currentKey === "settings" ? 1 : 0
+
+                        Column {
+                            spacing: 8
+                            padding: 8
+                        }
+
+                        Column {
+                            spacing: 8
+                            padding: 8
+                            Label { text: qsTr("Settings") }
+                            Label { text: qsTr("Currently does not support this feature") }
+                        }
+                    }
+                }
+
+                Pane {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    padding: 0
+                    topPadding: 0
+                    bottomPadding: 0
+                    leftPadding: 0
+                    rightPadding: 0
+
+                    Loader {
+                        id: mainContentLoader
+                        anchors.fill: parent
+                        sourceComponent: mainUserPageComponent
+                    }
+                }
+            }
+
+    Component {
+        id: mainUserPageComponent
+        ColumnLayout {
+        id: mainRoot
+        property alias monthGridRef: monthGrid
+
+        anchors.centerIn: parent
         spacing: 10
+
+        Component.onCompleted: {
+            mainUserPage.monthGridRef = monthGrid
+        }
 
         ToolButton {
             id: datePickerButton
@@ -294,10 +392,13 @@ Page {
 
         GridView {
         id: monthGrid
-        Layout.preferredWidth: 280
-        Layout.preferredHeight: 240
+
         cellWidth: 40
         cellHeight: 40
+
+        implicitWidth: cellWidth * 7
+        implicitHeight: cellHeight * 6
+        Layout.alignment: Qt.AlignHCenter
         
         property int month: mainUserPage.currentMonth - 1
         property int year: mainUserPage.currentYear
@@ -398,6 +499,8 @@ Page {
                                 if (s && Object.keys(s).length > 0) { statusObj = s; break }
                             }
                             dayContextMenu.selectedStatusJson = statusObj ? JSON.stringify(statusObj) : ""
+                            var mg = mainUserPage.monthGridRef
+                            dayContextMenu.selectedHasStatus = mg ? mg.hasStatusForDay(parent.day) : false
                             dayContextMenu.popup(parent, mouse.x, mouse.y)
                             break;
                     }
@@ -554,6 +657,8 @@ Page {
         }
         }
     }
+    }
+    
 
     Component {
         id: cmpCreateDiary
@@ -562,7 +667,12 @@ Page {
             onTriggered: {
                 dayContextMenu.close()
                 var today = mainUserPage.todayYYmmdd()
-                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + monthGrid.currentDay).slice(-2)
+                var mg = mainUserPage.monthGridRef
+                if (!mg) {
+                    mainUserPage.showError(qsTr("MonthGrid not found"))
+                    return
+                }
+                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + mg.currentDay).slice(-2)
                 if (selectedDate === today) {
                     createDiaryDialog.open()
                 } else {
@@ -579,11 +689,16 @@ Page {
             onTriggered: {
                 dayContextMenu.close()
                 var today = mainUserPage.todayYYmmdd()
-                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + monthGrid.currentDay).slice(-2)
+                var mg = mainUserPage.monthGridRef
+                if (!mg) {
+                    mainUserPage.showError(qsTr("MonthGrid not found"))
+                    return
+                }
+                var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + mg.currentDay).slice(-2)
                 if (selectedDate === today) {
                     mainUserPage.requestCreateStatus(mainUserPage.workspacePath)
                 } else {
-                    console.warn("Cannot create status for past days:", monthGrid.currentDay)
+                    console.warn("Cannot create status for past days:", mg.currentDay)
                 }
             }
         }
@@ -664,13 +779,11 @@ Page {
         property int selectedDay: 0
         property string selectedMDContentPath: ""
         property string selectedStatusJson: ""
+        property bool selectedHasStatus: false
 
         Menu {
             id: createItemMenu
             title: qsTr("Create Item")
-
-            property bool hasDiaryItems: dayContextMenu.selectedMDContentPath == ""
-            property bool hasStatus: (monthGrid.updateTrigger, !monthGrid.hasStatusForDay(dayContextMenu.selectedDay))
 
             property var __dynItems: []
             onAboutToShow: {
@@ -683,8 +796,9 @@ Page {
                 }
                 __dynItems = []
 
-                const showCreateDiary = createItemMenu.hasDiaryItems
-                const showCreateStatus = createItemMenu.hasStatus
+                const mg = mainUserPage.monthGridRef
+                const showCreateDiary = (dayContextMenu.selectedMDContentPath == "")
+                const showCreateStatus = !dayContextMenu.selectedHasStatus
 
                 if (showCreateDiary) {
                     var d = cmpCreateDiary.createObject(null)
@@ -720,7 +834,8 @@ Page {
                 __dynItems = []
 
                 const showEditDiary = dayContextMenu.selectedMDContentPath !== ""
-                const showEditStatus = monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
+                var mg = mainUserPage.monthGridRef
+                const showEditStatus = dayContextMenu.selectedHasStatus
 
                 if (showEditDiary) {
                     var d = cmpEditDiary.createObject(null)
@@ -757,21 +872,20 @@ Page {
                 }
                 __dynItems = []
 
+                const mg = mainUserPage.monthGridRef
                 const showDiary = showItemMenu.hasDiaryItems
-                const showStatus = monthGrid.hasStatusForDay(dayContextMenu.selectedDay)
+                const showStatus = dayContextMenu.selectedHasStatus
 
                 if (showDiary) {
                     var d = cmpShowDiary.createObject(null)
                     showItemMenu.addItem(d)
                     __dynItems.push(d)
                 }
-
                 if (showStatus) {
                     var s = cmpShowStatus.createObject(null)
                     showItemMenu.addItem(s)
                     __dynItems.push(s)
-                } 
-
+                }
                 if (!showDiary && !showStatus) {
                     var n = cmpNoItem.createObject(null)
                     showItemMenu.addItem(n)

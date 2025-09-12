@@ -94,3 +94,6 @@ build
 
 # Idea
 .idea
+
+# VS Studio
+.vs

@@ -61,7 +61,7 @@ QStringList GlobalSettings::getWorkspaceWithName(const QString &name) const {
 
 int GlobalSettings::createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path) {
     if (name.isEmpty()) {
-        qWarning() << "Workspace name cannot be empty";
+        qWarning() << "Workspace name cannot be empty";                                                             
         return -1;
     }
     
@@ -117,7 +117,8 @@ int GlobalSettings::createWorkspace(const QStringList &items) const {
     settingsJson["userName"] = userName;
     
     GlobalSettings settings;
-    if (!settings.saveToFileAny(QDir(fullPath).filePath("settings.json"), settingsJson)) {
+    int rc = settings.saveToFileAny(QDir(fullPath).filePath("settings.json"), settingsJson);
+    if (rc != 0) {
         qWarning() << "Failed to create settings file at:" << QDir(fullPath).filePath("settings.json");
     } else {
         qInfo() << "Settings file created at:" << QDir(fullPath).filePath("settings.json");

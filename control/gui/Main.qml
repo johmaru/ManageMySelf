@@ -137,6 +137,7 @@ ApplicationWindow {
                     Material.primary: root.Material.primary
                     Material.accent: root.Material.accent
                     theme: settings.theme
+                    ab_theme: settings.activityBarTheme
                     // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
                     onActivated: function(key) { mainContentItem.handleActivityChange(key) }
                 }
@@ -270,6 +271,7 @@ ApplicationWindow {
         MainUserPage {
             id: mainUserPageInstance
             themeSettings: settings.theme
+            activityBarThemeSettings: settings.activityBarTheme
             onShowError: function(message) {
                 errorLabel.text = message;
                 errorDialog.open();
@@ -377,7 +379,13 @@ ApplicationWindow {
             }
 
             onRequestStatusEditor: function(year, month, day, jsonString, path, mode) {
-                stackView.push(statusEditorComponent, { year: year, month: month, day: day, statusJson: jsonString, workspacePath: path, mode: mode });
+                stackView.push(statusEditorComponent, { year: year , month: month, day: day,
+                                                        statusJson: jsonString,
+                                                        workspacePath: path,
+                                                        mode: mode,
+                                                        themeSettings: settings.theme,
+                                                        activityBarThemeSettings: settings.activityBarTheme
+                                                    });
             }
 
             Component {

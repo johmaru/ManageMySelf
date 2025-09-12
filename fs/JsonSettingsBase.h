@@ -11,6 +11,8 @@ class JsonSettingsBase {
 public:
     virtual ~JsonSettingsBase() = default;
 
+    virtual int migrationJson(const QString filepath) = 0;
+
     [[nodiscard]] virtual QJsonObject toJson()const = 0;
 
     virtual void loadFromJson(const QJsonObject &json) = 0;
