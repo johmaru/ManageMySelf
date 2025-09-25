@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSet>
+#include <qjsonobject.h>
 
 int UserSql::createUserDatabase(const QString &path) const {
     if (path.isEmpty()) {
@@ -444,4 +445,383 @@ QString UserSql::getStatusByMonthJson(int year, int month) const {
     QJsonObject result;
     result["status"] = statusArray;
     return QJsonDocument(result).toJson(QJsonDocument::Indented);
+}
+
+QString UserSql::search(const QString& query, const QString& scope, bool caseSensitive, bool useRegex) const {
+    if (m_pathToUserDb.isEmpty()) {
+        qWarning() << "User database path is not set.";
+        return QString();
+    }
+
+    const QString s = scope.trimmed().toLower();
+
+    // Optional: detect a simple date condition like "date>=YYYY-MM-DD"
+    // Supported ops: =, ==, <>, !=, <, <=, >, >=
+    QRegularExpression dateRx(
+        "^\\s*date\\s*(<=|>=|=|==|<>|!=|<|>)\\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\\s*$",
+        QRegularExpression::CaseInsensitiveOption);
+    const auto m = dateRx.match(query);
+    const bool hasDateCond = m.hasMatch();
+    QString op;
+    QString dateStr;
+    if (hasDateCond) {
+        op = m.captured(1);
+        dateStr = m.captured(2);
+        if (op == "==") op = "=";
+        if (op == "<>") op = "!=";
+        if (op == "!=") op = "!=";
+    }
+
+    QJsonArray resultsArray;
+    try {
+        SQLite::Database db(m_pathToUserDb.toStdString(), SQLite::OPEN_READONLY);
+        if (s != "diary" && s != "status" && s != "all") {
+            qWarning() << "Invalid search scope:" << scope;
+            return QString();
+        }
+
+        if (s == "diary") {
+            if (hasDateCond) {
+                const std::string sql = std::string(
+                    "SELECT title, content_path, datetime(created_at, 'localtime') AS created_at_local "
+                    "FROM diary WHERE date(datetime(created_at, 'localtime')) ") + op.toStdString() + " ?";
+                SQLite::Statement stmt(db, sql);
+                stmt.bind(1, dateStr.toStdString());
+                while (stmt.executeStep()) {
+                    QString title = QString::fromStdString(stmt.getColumn(0).getText());
+                    QString contentPath = QString::fromStdString(stmt.getColumn(1).getText());
+                    QString createdAt = QString::fromStdString(stmt.getColumn(2).getText());
+                    QJsonObject result;
+                    result["type"] = "diary";
+                    result["title"] = title;
+                    result["contentPath"] = contentPath;
+                    result["date"] = createdAt;
+                    resultsArray.append(result);
+                }
+            } else {
+                SQLite::Statement stmt(db, "SELECT title, content_path, datetime(created_at, 'localtime') AS created_at_local FROM diary");
+                while (stmt.executeStep()) {
+                    QString title = QString::fromStdString(stmt.getColumn(0).getText());
+                    QString contentPath = QString::fromStdString(stmt.getColumn(1).getText());
+                    QString createdAt = QString::fromStdString(stmt.getColumn(2).getText());
+
+                    bool match = false;
+                    if (useRegex) {
+                        QRegularExpression regex(query, caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption);
+                        match = regex.match(title).hasMatch() || regex.match(contentPath).hasMatch();
+                    } else {
+                        Qt::CaseSensitivity cs = caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive;
+                        match = title.contains(query, cs) || contentPath.contains(query, cs);
+                    }
+
+                    if (match) {
+                        QJsonObject result;
+                        result["type"] = "diary";
+                        result["title"] = title;
+                        result["contentPath"] = contentPath;
+                        result["date"] = createdAt;
+                        resultsArray.append(result);
+                    }
+                }
+            }
+        }
+
+        if (s == "status") {
+            if (hasDateCond) {
+                const std::string sql = std::string(
+                    "SELECT mood, free_mood_text, sleep_time, wake_up_time, temperature, datetime(created_at, 'localtime') AS created_at_local "
+                    "FROM user_status WHERE date(datetime(created_at, 'localtime')) ") + op.toStdString() + " ?";
+                SQLite::Statement stmt(db, sql);
+                stmt.bind(1, dateStr.toStdString());
+                while (stmt.executeStep()) {
+                    QJsonObject result;
+                    result["type"] = "status";
+                    result["mood"] = stmt.getColumn(0).getInt();
+                    result["freeMoodText"] = QString::fromStdString(stmt.getColumn(1).getText());
+                    result["sleepTime"] = stmt.getColumn(2).getDouble();
+                    result["wakeUpTime"] = stmt.getColumn(3).getDouble();
+                    result["temperature"] = stmt.getColumn(4).getDouble();
+                    result["date"] = QString::fromStdString(stmt.getColumn(5).getText());
+                    resultsArray.append(result);
+                }
+            } else {
+                SQLite::Statement stmt(db, "SELECT mood, free_mood_text, sleep_time, wake_up_time, temperature, datetime(created_at, 'localtime') AS created_at_local FROM user_status");
+                while (stmt.executeStep()) {
+                    QString mood = QString::number(stmt.getColumn(0).getInt());
+                    QString freeMoodText = QString::fromStdString(stmt.getColumn(1).getText());
+                    QString sleepTime = QString::number(stmt.getColumn(2).getDouble());
+                    QString wakeUpTime = QString::number(stmt.getColumn(3).getDouble());
+                    QString temperature = QString::number(stmt.getColumn(4).getDouble());
+                    QString createdAt = QString::fromStdString(stmt.getColumn(5).getText());
+
+                    bool match = false;
+                    if (useRegex) {
+                        QRegularExpression regex(query, caseSensitive ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption);
+                        match = regex.match(mood).hasMatch() || regex.match(freeMoodText).hasMatch() ||
+                                regex.match(sleepTime).hasMatch() || regex.match(wakeUpTime).hasMatch() ||
+                                regex.match(temperature).hasMatch();
+                    } else {
+                        Qt::CaseSensitivity cs = caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive;
+                        match = mood.contains(query, cs) || freeMoodText.contains(query, cs) ||
+                                sleepTime.contains(query, cs) || wakeUpTime.contains(query, cs) ||
+                                temperature.contains(query, cs);
+                    }
+
+                    if (match) {
+                        QJsonObject result;
+                        result["type"] = "status";
+                        result["mood"] = mood;
+                        result["freeMoodText"] = freeMoodText;
+                        result["sleepTime"] = sleepTime;
+                        result["wakeUpTime"] = wakeUpTime;
+                        result["temperature"] = temperature;
+                        result["date"] = createdAt;
+                        resultsArray.append(result);
+                    }
+                }
+            }
+        }
+
+        if (s == "all"){
+            if (hasDateCond) {
+                const QString qsql = QString(
+                    "SELECT type, created_at_local, id, title, content_path, "
+                    "       mood, free_mood_text, sleep_time, wake_up_time, temperature "
+                    "FROM ( "
+                    "  SELECT 'diary' AS type, datetime(created_at, 'localtime') AS created_at_local, "
+                    "         id, title, content_path, NULL AS mood, NULL AS free_mood_text, "
+                    "         NULL AS sleep_time, NULL AS wake_up_time, NULL AS temperature "
+                    "  FROM diary WHERE date(datetime(created_at, 'localtime')) %1 ? "
+                    "  UNION ALL "
+                    "  SELECT 'status', datetime(created_at, 'localtime'), "
+                    "         id, NULL, NULL, mood, free_mood_text, sleep_time, wake_up_time, temperature "
+                    "  FROM user_status WHERE date(datetime(created_at, 'localtime')) %1 ? "
+                    ") u "
+                    "ORDER BY created_at_local DESC").arg(op);
+                SQLite::Statement stmt(db, qsql.toStdString());
+                stmt.bind(1, dateStr.toStdString());
+                stmt.bind(2, dateStr.toStdString());
+                while (stmt.executeStep()) {
+                    const QString type = QString::fromStdString(stmt.getColumn(0).getText());
+                    const QString createdAt = QString::fromStdString(stmt.getColumn(1).getText());
+                    QJsonObject result;
+                    result["type"] = type;
+                    result["date"] = createdAt;
+                    if (type == "diary") {
+                        result["title"] = QString::fromStdString(stmt.getColumn(3).getText());
+                        result["contentPath"] = QString::fromStdString(stmt.getColumn(4).getText());
+                    } else {
+                        result["mood"] = stmt.getColumn(5).isNull() ? 0 : stmt.getColumn(5).getInt();
+                        result["freeMoodText"] = QString::fromStdString(stmt.getColumn(6).getText());
+                        result["sleepTime"] = stmt.getColumn(7).isNull() ? 0.0 : stmt.getColumn(7).getDouble();
+                        result["wakeUpTime"] = stmt.getColumn(8).isNull() ? 0.0 : stmt.getColumn(8).getDouble();
+                        result["temperature"] = stmt.getColumn(9).isNull() ? 0.0 : stmt.getColumn(9).getDouble();
+                    }
+                    resultsArray.append(result);
+                }
+            } else {
+                // Fallback: return flat list (you can swap to grouped if desired)
+                SQLite::Statement stmt(
+                    db,
+                    "SELECT type, created_at_local, id, title, content_path, "
+                    "       mood, free_mood_text, sleep_time, wake_up_time, temperature "
+                    "FROM ( "
+                    "  SELECT 'diary' AS type, datetime(created_at, 'localtime') AS created_at_local, "
+                    "         id, title, content_path, NULL AS mood, NULL AS free_mood_text, "
+                    "         NULL AS sleep_time, NULL AS wake_up_time, NULL AS temperature "
+                    "  FROM diary "
+                    "  UNION ALL "
+                    "  SELECT 'status', datetime(created_at, 'localtime'), "
+                    "         id, NULL, NULL, mood, free_mood_text, sleep_time, wake_up_time, temperature "
+                    "  FROM user_status "
+                    ") u "
+                    "ORDER BY created_at_local DESC");
+                while (stmt.executeStep()) {
+                    const QString type = QString::fromStdString(stmt.getColumn(0).getText());
+                    const QString createdAt = QString::fromStdString(stmt.getColumn(1).getText());
+                    QJsonObject result;
+                    result["type"] = type;
+                    result["date"] = createdAt;
+                    if (type == "diary") {
+                        result["title"] = QString::fromStdString(stmt.getColumn(3).getText());
+                        result["contentPath"] = QString::fromStdString(stmt.getColumn(4).getText());
+                    } else {
+                        result["mood"] = stmt.getColumn(5).isNull() ? 0 : stmt.getColumn(5).getInt();
+                        result["freeMoodText"] = QString::fromStdString(stmt.getColumn(6).getText());
+                        result["sleepTime"] = stmt.getColumn(7).isNull() ? 0.0 : stmt.getColumn(7).getDouble();
+                        result["wakeUpTime"] = stmt.getColumn(8).isNull() ? 0.0 : stmt.getColumn(8).getDouble();
+                        result["temperature"] = stmt.getColumn(9).isNull() ? 0.0 : stmt.getColumn(9).getDouble();
+                    }
+                    resultsArray.append(result);
+                }
+            }
+        }
+
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while performing search:" << e.what();
+    }
+
+    QJsonObject result;
+    result["results"] = resultsArray;
+    return QJsonDocument(result).toJson(QJsonDocument::Indented);
+}
+
+QString UserSql::searchGroupedAll(SQLite::Database &db) const {
+    if (m_pathToUserDb.isEmpty()) {
+        qWarning() << "User database path is not set.";
+        return QString();
+    }
+
+    QMap<QString, QJsonArray> buckets;
+    try{
+        SQLite::Statement stmt(
+            db,
+            "SELECT type, created_at_local, id, title, content_path, "
+            "       mood, free_mood_text, sleep_time, wake_up_time, temperature "
+            "FROM ( "
+            "  SELECT 'diary' AS type, datetime(created_at, 'localtime') AS created_at_local, "
+            "         id, title, content_path, NULL AS mood, NULL AS free_mood_text, "
+            "         NULL AS sleep_time, NULL AS wake_up_time, NULL AS temperature "
+            "  FROM diary "
+            "  UNION ALL "
+            "  SELECT 'status', datetime(created_at, 'localtime'), "
+            "         id, NULL, NULL, mood, free_mood_text, sleep_time, wake_up_time, temperature "
+            "  FROM user_status "
+            ") u "
+            "ORDER BY created_at_local DESC"
+        );
+
+        while (stmt.executeStep()){
+            const QString type = QString::fromStdString(stmt.getColumn(0).getText());
+            const QString createdAt = QString::fromStdString(stmt.getColumn(1).getText());
+            const int id = stmt.getColumn(2).getInt();
+
+            QJsonObject entry;
+            entry["type"] = type;
+            entry["id"] = id;
+            entry["createdAt"] = createdAt;
+
+            if (type == "diary") {
+                entry["title"] = QString::fromStdString(stmt.getColumn(3).getText());
+                entry["contentPath"] = QString::fromStdString(stmt.getColumn(4).getText());
+            } else if (type == "status") {
+                QJsonObject st;
+                entry["mood"] = stmt.getColumn(5).getInt();
+                entry["freeMoodText"] = QString::fromStdString(stmt.getColumn(6).getText());
+                entry["sleepTime"] = stmt.getColumn(7).getDouble();
+                entry["wakeUpTime"] = stmt.getColumn(8).getDouble();
+                entry["temperature"] = stmt.getColumn(9).getDouble();
+                entry["status"] = st;
+            }
+
+            const QString dateKey = createdAt.left(10);
+            buckets[dateKey].append(entry);
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while grouping search results:" << e.what();
+    }
+
+    QStringList dates = buckets.keys();
+    std::sort(dates.begin(), dates.end(), std::greater<QString>());
+
+    QJsonArray groupedResults;
+    for (const QString &date : dates) {
+        QJsonObject g;
+        g["date"] = date;
+        g["entries"] = buckets.value(date);
+        groupedResults.append(g);
+    }
+
+    QJsonObject out;
+    out["groupedResults"] = groupedResults;
+    return QJsonDocument(out).toJson(QJsonDocument::Indented);
+}
+
+QVariant UserSql::getGraphData(int scope, int filter, const QString& start_date, const QString& end_date) const {
+    QVariantMap root;
+
+	QString start_out = start_date;
+	QString end_out = end_date;
+
+    if (m_pathToUserDb.isEmpty()) {
+        qWarning() << "User database path is not set.";
+        root.insert("start", start_out);
+        root.insert("end", end_out);
+
+    	return root;
+	}
+
+	QDate from = QDate::fromString(start_date, "yyyy-MM-dd");
+	QDate to = QDate::fromString(end_date, "yyyy-MM-dd");
+    if (!from.isValid() || !to.isValid()) {
+        qWarning() << "Invalid date range:" << start_date << "to" << end_date;
+        root.insert("start", start_out);
+        root.insert("end", end_out);
+        root.insert("days", QVariantList{});
+
+		return root;
+	}
+
+    if (from > to) std::swap(from, to);
+
+	start_out = from.toString("yyyy-MM-dd");
+	end_out = to.toString("yyyy-MM-dd");
+
+    QVariantList days_list;
+    try {
+		SQLite::Database db(m_pathToUserDb.toStdString(), SQLite::OPEN_READONLY);
+        db.setBusyTimeout(3000);
+
+        QSet<QString> diary_dates;
+		SQLite::Statement diary_query(db, "SELECT DISTINCT date(created_at) FROM diary WHERE date(created_at) BETWEEN ? AND ?");
+        diary_query.bind(1, from.toString("yyyy-MM-dd").toStdString());
+        diary_query.bind(2, to.toString("yyyy-MM-dd").toStdString());
+        while (diary_query.executeStep()) {
+            diary_dates.insert(QString::fromStdString(diary_query.getColumn(0).getText()));
+		}
+
+        QHash<QString, QVariantMap> status_data;
+		SQLite::Statement status_query(db, "SELECT date(created_at), mood, free_mood_text, sleep_time, wake_up_time, temperature FROM user_status WHERE date(created_at) BETWEEN ? AND ?");
+        status_query.bind(1, from.toString("yyyy-MM-dd").toStdString());
+        status_query.bind(2, to.toString("yyyy-MM-dd").toStdString());
+        while (status_query.executeStep()) {
+            QString date = QString::fromStdString(status_query.getColumn(0).getText());
+            QVariantMap data;
+            data.insert("mood", status_query.getColumn(1).getInt());
+            data.insert("free_mood_text", QString::fromStdString(status_query.getColumn(2).getText()));
+            data.insert("sleep_time", status_query.getColumn(3).getDouble());
+            data.insert("wake_up_time", status_query.getColumn(4).getDouble());
+            data.insert("temperature", status_query.getColumn(5).getDouble());
+            status_data.insert(date, data);
+        }
+
+        for (QDate cursor = from; cursor <= to; cursor = cursor.addDays(1)) {
+            QString dataStr = cursor.toString("yyyy-MM-dd");
+            QVariantMap day_data;
+			day_data.insert("date", dataStr);
+            day_data.insert("diary_exists", diary_dates.contains(dataStr));
+
+            if (status_data.contains(dataStr)) {
+                day_data.insert("status", status_data.value(dataStr));
+            }
+            else {
+                day_data.insert("status", QVariant());
+            }
+			days_list.append(day_data);
+        }
+    } catch (const SQLite::Exception &e) {
+        qWarning() << "SQLite error while getting graph data:" << e.what();
+        root.insert("start", start_out);
+        root.insert("end", end_out);
+        root.insert("days", QVariantList{});
+
+        return root;
+	}
+
+    root.insert("start", start_out);
+    root.insert("end", end_out);
+    root.insert("days", days_list);
+
+	return root;
+    
 }

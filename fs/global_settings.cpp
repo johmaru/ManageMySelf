@@ -14,6 +14,8 @@
 #include <qcontainerfwd.h>
 #include <qdebug.h>
 #include <qobject.h>
+#include <qwindow.h>
+#include <QProcess>
 
 #include "fs/Migration.h"
 #include "fs/AppMigrations.h"
@@ -359,4 +361,60 @@ int GlobalSettings::writeMarkdownFile(const QString &filePath, const QString &co
     
     qInfo() << "Markdown file written successfully:" << filePath;
     return 0; // 成功
+}
+
+QString GlobalSettings::search(const QString& query, const QString& scope, bool caseSensitive, bool useRegex, const QString& path) const {
+    if (query.isEmpty() || path.isEmpty()) {
+        qWarning() << "Query and path cannot be empty";
+        return QString(); // クエリまたはパスが空の場合は空の文字列を返す
+    }
+
+    QString userDbPath = UserSql::getUserDatabasePath(path);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path for:" << path;
+        return QString(); // ユーザーデータベースパスの取得に失敗
+    }
+
+    UserSql userSql(userDbPath);
+    return userSql.search(query, scope, caseSensitive, useRegex);
+}
+
+int GlobalSettings::openGraphWindow(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr) {
+
+    QWindow* parentWin = QGuiApplication::focusWindow();
+    if (!parentWin && !QGuiApplication::topLevelWindows().isEmpty())
+		parentWin = QGuiApplication::topLevelWindows().first();
+
+    const quint64 parentId = parentWin ? parentWin->winId() : 0;
+
+    QStringList args;
+    if (parentId)
+		args << QStringLiteral("--parent-winid") << QString::number(parentId);
+    if (!workspacePath.isEmpty())
+
+		args << QStringLiteral("--workspace") << workspacePath;
+    args << QStringLiteral("--scope") << QString::number(scope);
+    args << QStringLiteral("--filter") << QString::number(filter);
+	args << QStringLiteral("--to") << toStr;
+	args << QStringLiteral("--from") << fromStr;
+	args << QStringLiteral("--ident") << QStringLiteral("graph");
+
+    const QString exe = QCoreApplication::applicationFilePath();
+	return QProcess::startDetached(exe, args);
+
+}
+
+[[nodiscard]]QVariant GlobalSettings::getGraphData(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr) const
+{
+    if (workspacePath.isEmpty()) {
+        qWarning() << "Workspace path cannot be empty";
+        return {};
+    }
+    QString userDbPath = UserSql::getUserDatabasePath(workspacePath);
+    if (userDbPath.isEmpty()) {
+        qWarning() << "Failed to get user database path for:" << workspacePath;
+        return {};
+    }
+    UserSql userSql(userDbPath);
+	return userSql.getGraphData(scope, filter, toStr, fromStr);
 }

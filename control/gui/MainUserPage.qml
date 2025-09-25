@@ -19,6 +19,8 @@ Page {
 
     property string _pendingDiaryJson: ""
     property string _pendingStatusJson: ""
+    property string _pendingMargedJson: ""
+    property bool _hasPendingMerged: false
     property bool _diaryArrived: false
     property bool _statusArrived: false
 
@@ -32,9 +34,15 @@ Page {
     signal requestMonthUserDiarySqlData(int year, int month, string path)
     signal requestMonthUserStatusData(int year, int month, string path)
     signal updateMonthGridData(string jsonString)
+    signal updateSearchResults(string jsonString)
     signal requestNavigateMarkdownEditor(string contentPath)
     signal requestNavigateMarkdownViewer(string contentPath)
     signal requestStatusEditor(int year, int month, int day, string jsonString, string path, int mode)
+    signal requestSearch(string query, string scope, bool caseSensitive, bool useRegex, string path)
+    signal requestCreateNewWindowForGraph(string path, int Scope, int Fillter, string toStr, string fromStr)
+
+    ListModel { id: condModel; Component.onCompleted: append({ field: "title", op: "contains", value: "", logic: "AND" }) }
+    ListModel { id: searchModel }
 
     property Component headerComponent: ToolBar {
         RowLayout {
@@ -62,7 +70,16 @@ Page {
         if (mg) {
             mg.updateMonthData(jsonString)
         } else {
-            console.error("MonthGrid not found")
+            _pendingMargedJson = jsonString
+            _hasPendingMerged = true
+            Qt.callLater(function() {
+                var mg2 = mainUserPage.monthGridRef
+                if (mg2 && _hasPendingMerged) {
+                    mg2.updateMonthData(_pendingMargedJson)
+                    _pendingMargedJson = ""
+                    _hasPendingMerged = false
+                }
+            })
         }
     }
 
@@ -183,6 +200,61 @@ Page {
         return { diaries: diaries, statusDates: Object.keys(statusByDate), statusByDate: statusByDate}
     }
 
+    function applySearchResults(jsonString) {
+        var obj
+        try {
+            obj = JSON.parse(jsonString)
+        } catch (e) {
+            console.error("Invalid search results JSON:", e)
+            searchModel.clear()
+            return
+        }
+
+        var rows = []
+        if (Array.isArray(obj)) {
+            rows = obj
+        } else if (Array.isArray(obj.results)) {
+            rows = obj.results
+        } else if (Array.isArray(obj.groups)) {
+            for (var gi = 0; gi < obj.groups.length; gi++) {
+                var g = obj.groups[gi]
+                var items = g.items || []
+                for (var ii = 0; ii < items.length; ii++) {
+                    var it = items[ii]
+                    if (!it.createdAt && g.date) it.createdAt = g.date + " 00:00:00"
+                    rows.push(it)
+                }
+            }
+        } else {
+            rows = []
+        }
+
+            searchModel.clear()
+            console.log("applySearchResults: rows=", rows.length)
+        for (var i = 0; i < rows.length; i++) {
+            var r = rows[i]
+            var item = {
+                type: r.type || "",
+                title: r.title || "",
+                contentPath: r.contentPath || "",
+                createdAt: r.createdAt || r.date || ""
+            }
+            if (r.status) {
+                if (r.status.mood !== null && r.status.mood !== undefined) item.mood = r.status.mood
+                if (r.status.freeMoodText !== null && r.status.freeMoodText !== undefined) item.freeMoodText = r.status.freeMoodText
+                if (r.status.sleepTime !== null && r.status.sleepTime !== undefined) item.sleepTime = r.status.sleepTime
+                if (r.status.wakeUpTime !== null && r.status.wakeUpTime !== undefined) item.wakeUpTime = r.status.wakeUpTime
+                if (r.status.temperature !== null && r.status.temperature !== undefined) item.temperature = r.status.temperature
+            }
+            item.raw = r
+            searchModel.append(item)
+        }
+    }
+
+    onUpdateSearchResults: function(jsonString) {
+        mainUserPage.applySearchResults(jsonString)
+    }
+
     Dialog {
         id: createDiaryDialog
         title: qsTr("Create Diary")
@@ -298,6 +370,13 @@ Page {
                         case "toggle":
                             sidePanel.isSelected = !sidePanel.isSelected
                             break;
+                        case "search":
+                             sidePanel.isSelected = true
+                             break;
+                        case "graph":
+                            if (sidePanel.isSelected) sidePanel.isSelected = false
+                            else sidePanel.isSelected = true
+                            break;
                         case "settings":
                             if (sidePanel.isSelected) sidePanel.isSelected = false
                             else sidePanel.isSelected = true
@@ -337,7 +416,10 @@ Page {
                     StackLayout {
                         id: sideStack
                         anchors.fill: parent
-                        currentIndex: activityLoader.currentKey === "settings" ? 1 : 0
+                        currentIndex: activityLoader.currentKey === "settings" ? 1 
+                                    : activityLoader.currentKey === "search" ? 2
+                                    : activityLoader.currentKey === "graph" ? 3
+                                    : 0
 
                         Column {
                             spacing: 8
@@ -350,7 +432,267 @@ Page {
                             Label { text: qsTr("Settings") }
                             Label { text: qsTr("Currently does not support this feature") }
                         }
+
+                        Column {
+                            spacing: 8
+                            padding: 8
+                            Label { text: qsTr("Search") }
+                            
+                            ComboBox {
+                                id: searchMode
+                                model: [ qsTr("Expression"), qsTr("Builder")]
+                                currentIndex: 0
+                                    width: searchResults ? searchResults.width : 0
+                            }
+
+                            Loader {
+                                id: searchUiLoader
+                                sourceComponent: searchMode.currentIndex === 0 ? exprSearchComp : builderSearchComp
+                            }
+
+                            ListView {
+                                id: searchResults
+                                height: 240
+                                Layout.fillWidth: true
+                                model: searchModel
+                                delegate: ItemDelegate {
+                                    required property int index
+                                    width: ListView.view ? ListView.view.width : 0
+
+                                    property var __row: (index >= 0 && index < searchModel.count) ? searchModel.get(index) : ({})
+                                    text: ((__row && __row.type) || "") + " " + ((__row && __row.createdAt) || "") + " " + ((__row && __row.title) || "")
+                                    onClicked: {
+                                        var row = (index >= 0 && index < searchModel.count) ? searchModel.get(index) : null
+                                        if (row && row.contentPath && row.contentPath !== "") {
+                                            mainUserPage.requestNavigateMarkdownViewer(row.contentPath)
+                                        } else {
+                                            mainUserPage.showError(qsTr("No content path available"))
+                                        }
+                                    }
+                                }
+                                visible: searchModel.count > 0
+                            }
+                             Label {
+                                id: resultHint
+                                text: searchModel.count === 0 ? qsTr("No results") : ""
+                                visible: searchModel.count === 0
+                            }
+                        }
+                     
+                    Item {
+                        id: graphContainer
+                        Layout.fillWidth: true
+
+                        property int graphScope: graphScopeComboBox.currentIndex  // 0: with Diary, 1: with Status
+                        property int graphFilter: graphFilterComboBox.currentIndex  // 0: All, 1: Mood
+
+                        Column {
+                        id: graphColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        spacing: 8
+                        padding: 8
+
+                        Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Graph") }
+
+                        Item{height:80}
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 1
+                            color: Material.dividerColor
+                            opacity: 0.7
+                        }
+                        
+                        Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("day range") }
+                        
+                        Row{
+                            spacing: 8
+                           
+                            Label { anchors.verticalCenter: parent.verticalCenter; text: qsTr("From") }
+
+                            Row {
+                                id: prevDayPicker
+                                spacing: 6
+
+                                property int year: mainUserPage.currentYear
+                                property int month: mainUserPage.currentMonth
+                                property int day: new Date().getDate()
+                                property date dateValue: new Date(year, month - 1, day)
+                                property string yyyy_mm_dd: Qt.formatDate(dateValue, "yyyy-MM-dd")
+                                function daysInMonth(y, m) { return new Date(y, m, 0).getDate() }  // 数値で返す
+
+                                TextField {
+                                    id: prevYYYYmmddField
+                                    width: 90
+                                    placeholderText: qsTr("yyyy-MM-dd or yyyymmdd")
+                                    inputMethodHints: Qt.ImhDigitsOnly
+                                    text: prevDayPicker.yyyy_mm_dd
+                                    property bool _updating: false
+
+                                    onEditingFinished: {
+                                        if (_updating) return
+                                        _updating = true
+                                        const s = text.trim()
+                                        let y, m, d
+                                        if (s.indexOf('-') > 0) {
+                                            const parts = s.split('-')
+                                            if (parts.length === 3) {
+                                                y = parseInt(parts[0]); m = parseInt(parts[1]); d = parseInt(parts[2])
+                                            }
+                                        } else if (s.length === 8) {
+                                            y = parseInt(s.slice(0,4)); m = parseInt(s.slice(4,6)); d = parseInt(s.slice(6,8))
+                                        }
+                                        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                                            const dim = prevDayPicker.daysInMonth(y, m)
+                                            if (d >= 1 && d <= dim) {
+                                                prevDayPicker.year = y
+                                                prevDayPicker.month = m
+                                                prevDayPicker.day = d
+                                                prevDayPicker.dateValue = new Date(y, m - 1, d)
+                                                text = Qt.formatDate(prevDayPicker.dateValue, "yyyy-MM-dd")
+                                            }
+                                        }
+                                        _updating = false
+                                    }
+
+                                    Connections {
+                                        target: prevDayPicker
+                                        function onDateValueChanged() {
+                                            if (!prevYYYYmmddField._updating && !prevYYYYmmddField.activeFocus) {
+                                                prevYYYYmmddField._updating = true
+                                                prevYYYYmmddField.text = Qt.formatDate(prevDayPicker.dateValue, "yyyy-MM-dd")
+                                                prevYYYYmmddField._updating = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Label { anchors.verticalCenter: parent.verticalCenter; text: qsTr("To") }
+
+                            Row {
+                                id: nextDayPicker
+                                spacing: 6
+
+                                property int year: mainUserPage.currentYear
+                                property int month: mainUserPage.currentMonth
+                                property int day: new Date().getDate()
+                                property date dateValue: new Date(year, month - 1, day)
+                                property string yyyy_mm_dd: Qt.formatDate(dateValue, "yyyy-MM-dd")
+                                function daysInMonth(y, m) { return new Date(y, m, 0).getDate() }
+
+                                TextField {
+                                    id: nextYYYYmmddField
+                                    width: 90
+                                    placeholderText: qsTr("yyyy-MM-dd or yyyymmdd")
+                                    inputMethodHints: Qt.ImhDigitsOnly
+                                    text: nextDayPicker.yyyy_mm_dd
+                                    property bool _updating: false
+
+                                    onEditingFinished: {
+                                        if (_updating) return
+                                        _updating = true
+                                        const s = text.trim()
+                                        let y, m, d
+                                        if (s.indexOf('-') > 0) {
+                                            const parts = s.split('-')
+                                            if (parts.length === 3) {
+                                                y = parseInt(parts[0]); m = parseInt(parts[1]); d = parseInt(parts[2])
+                                            }
+                                        } else if (s.length === 8) {
+                                            y = parseInt(s.slice(0,4)); m = parseInt(s.slice(4,6)); d = parseInt(s.slice(6,8))
+                                        }
+                                        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                                            const dim = nextDayPicker.daysInMonth(y, m)
+                                            if (d >= 1 && d <= dim) {
+                                                nextDayPicker.year = y
+                                                nextDayPicker.month = m
+                                                nextDayPicker.day = d
+                                                nextDayPicker.dateValue = new Date(y, m - 1, d)
+                                                text = Qt.formatDate(nextDayPicker.dateValue, "yyyy-MM-dd")
+                                            }
+                                        }
+                                        _updating = false
+                                    }
+
+                                    Connections {
+                                        target: nextDayPicker
+                                        function onDateValueChanged() {
+                                            if (!nextYYYYmmddField._updating && !nextYYYYmmddField.activeFocus) {
+                                                nextYYYYmmddField._updating = true
+                                                nextYYYYmmddField.text = Qt.formatDate(nextDayPicker.dateValue, "yyyy-MM-dd")
+                                                nextYYYYmmddField._updating = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                       Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Scope") }
+
+                       ComboBox {
+                            id: graphScopeComboBox
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 200
+                            model: [ qsTr("With Diary"), qsTr("With Status") ]
+                            currentIndex: 0
+
+                            onCurrentIndexChanged: {
+                                graphContainer.graphScope = currentIndex                            
+                            }                 
+                       }
+
+                       Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Filter")}
+                       
+                       ComboBox {
+                            id: graphFilterComboBox
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 200
+                            model: [ qsTr("All"), qsTr("Mood") ]
+                            currentIndex: 0
+
+                            onCurrentIndexChanged: {
+                                graphContainer.graphFilter = currentIndex
+                            }
+                       }
+
+                       Button {
+                            
+                            id: loadGraphButton
+
+                           text: qsTr("Load Graph")
+                           anchors.horizontalCenter: parent.horizontalCenter
+                           onClicked: {
+                               var mg = mainUserPage.monthGridRef
+                               if (!mg) {
+                                   mainUserPage.showError(qsTr("MonthGrid not found"))
+                                   return
+                               }
+                               var fromDate = prevDayPicker.dateValue
+                               var toDate = nextDayPicker.dateValue
+                               if (fromDate > toDate) {
+                                   mainUserPage.showError(qsTr("From date must be earlier than To date"))
+                                   return
+                               }
+                               var scope = graphContainer.graphScope === 0 ? "diary" : "status"
+                               var filter = graphContainer.graphFilter === 0 ? "all" : "mood"
+                               var fromStr = Qt.formatDate(fromDate, "yyyy-MM-dd")
+                               var toStr = Qt.formatDate(toDate, "yyyy-MM-dd")
+                               console.log("Requesting graph data from", fromStr, "to", toStr, "scope:", scope, "filter:", filter)
+                               mainUserPage.requestCreateNewWindowForGraph(mainUserPage.workspacePath, graphContainer.graphScope, graphContainer.graphFilter, toStr, fromStr)
+                           }
+
+                       }
+                        
+
                     }
+                    }
+                   
+                 }
+
                 }
 
                 Pane {
@@ -652,7 +994,11 @@ Page {
         onYearChanged: loadMonthData()
         
         Component.onCompleted: {
-            mainUserPage.requestMonthUserDiarySqlData(mainUserPage.currentYear, mainUserPage.currentMonth, mainUserPage.workspacePath)
+            if (mainUserPage._hasPendingMerged) {
+                monthGrid.updateMonthData(mainUserPage._pendingMargedJson)
+                mainUserPage._pendingMargedJson = ""
+                mainUserPage._hasPendingMerged = false
+            }
             loadMonthData()
         }
         }
@@ -894,4 +1240,152 @@ Page {
             }
         }
     }
+
+    Component {
+    id: exprSearchComp
+    Column {
+        spacing: 6
+
+        TextField {
+            id: queryField
+            placeholderText: qsTr('e.g. title:"work" & mood>3 | date>=2025-09-01')
+            width: 240
+            onAccepted: searchBtn.clicked()
+        }
+
+        Row {
+            spacing: 6
+            ComboBox {
+                id: scopeBox
+                model: [qsTr("All"), qsTr("Diary"), qsTr("Status")]
+                width: 100
+            }
+            CheckBox { id: caseSensitiveBox; text: qsTr("Case") }
+            CheckBox { id: regexBox; text: qsTr("Regex") }
+            ToolButton {
+                text: "?"
+                onClicked: helpPopup.open()
+            }
+        }
+
+        Row {
+            spacing: 6
+            Button {
+                id: searchBtn
+                text: qsTr("Search")
+                onClicked: {
+                    mainUserPage.requestSearch(
+                        queryField.text,
+                        scopeBox.currentText,
+                        caseSensitiveBox.checked,
+                        regexBox.checked,
+                        mainUserPage.workspacePath
+                    )
+                }
+            }
+            Button {
+                text: qsTr("Clear")
+                onClicked: {
+                    queryField.text = ""
+                    searchModel.clear()
+                }
+            }
+        }
+
+        Popup {
+            id: helpPopup
+            x: 10; y: 10
+            modal: false
+            contentItem: Column {
+                spacing: 4
+                padding: 8
+                Label { text: qsTr("Operators: & = AND, | = OR, <> = not equal, () grouping") }
+                Label { text: qsTr("Comparisons: =, !=(<>), <, <=, >, >=") }
+                Label { text: qsTr('Example: title:"work" & (mood>3 | temperature>=37)') }
+            }
+        }
+    }
+}
+
+Component {
+    id: builderSearchComp
+    Column {
+        spacing: 6
+
+        Repeater {
+            id: condRepeater
+            model: condModel
+            delegate: Row {
+                id: condRow
+                required property int index
+                spacing: 6
+                ComboBox {
+                    id: fieldBox
+                    width: 100
+                    model: [ "title", "content", "date", "mood", "temperature" ]
+                    textRole: "display"
+                    onCurrentTextChanged: condModel.setProperty(condRow.index, "field", currentText)
+                    Component.onCompleted: currentIndex = Math.max(0, fieldBox.model.indexOf((condModel.get(condRow.index).field) || "title"))
+                }
+                ComboBox {
+                    id: opBox
+                    width: 90
+                    model: [ "=", "!=", "<", "<=", ">", ">=", "contains", "not contains" ]
+                    onCurrentTextChanged: condModel.setProperty(condRow.index, "op", currentText)
+                    Component.onCompleted: currentIndex = Math.max(0, opBox.model.indexOf((condModel.get(condRow.index).op) || "="))
+                }
+                TextField {
+                    id: valueField
+                    width: 120
+                    text: (condModel.get(condRow.index).value) || ""
+                    onTextChanged: condModel.setProperty(condRow.index, "value", text)
+                }
+                ComboBox {
+                    id: logicBox
+                    width: 70
+                    model: [ "AND", "OR" ]
+                    onCurrentTextChanged: condModel.setProperty(condRow.index, "logic", currentText)
+                    visible: condRow.index < condModel.count - 1
+                    Component.onCompleted: currentIndex = Math.max(0, logicBox.model.indexOf((condModel.get(condRow.index).logic) || "AND"))
+                }
+                ToolButton {
+                    text: "🗑"
+                    onClicked: condModel.remove(condRow.index)
+                }
+            }
+        }
+
+        Row {
+            spacing: 6
+            Button {
+                text: qsTr("+ Condition")
+                onClicked: condModel.append({ field: "title", op: "contains", value: "", logic: "AND" })
+            }
+            Button {
+                text: qsTr("Search")
+                onClicked: {
+                    const parts = []
+                    for (let i = 0; i < condModel.count; i++) {
+                        const c = condModel.get(i)
+                        const v = (c.op === "contains" || c.op === "not contains")
+                            ? `"${c.value}"`
+                            : c.value
+                        parts.push(`${c.field} ${c.op} ${v}`)
+                        if (i < condModel.count - 1) parts.push(c.logic === "OR" ? "|" : "&")
+                    }
+                    const query = parts.join(" ")
+                    mainUserPage.requestSearch(query, "All", false, false, mainUserPage.workspacePath)
+                }
+            }
+            Button {
+                text: qsTr("Clear")
+                onClicked: {
+                    condModel.clear()
+                    condModel.append({ field: "title", op: "contains", value: "", logic: "AND" })
+                    searchModel.clear()
+                }
+            }
+        }
+    }
+}
 }

@@ -48,6 +48,9 @@ public slots:
     Q_INVOKABLE QString getMonthUserStatusData(int year, int month, const QString &path) const;
     Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
     Q_INVOKABLE int writeMarkdownFile(const QString &filePath, const QString &content) const;
+    Q_INVOKABLE QString search(const QString& query, const QString& scope, bool casseSensitive, bool useRegex, const QString& path) const;
+    Q_INVOKABLE int openGraphWindow(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr);
+	Q_INVOKABLE [[nodiscard]]QVariant getGraphData(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr) const;
 
     Q_INVOKABLE QStringList getSettings(const QString &path) const;
 

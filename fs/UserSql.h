@@ -6,6 +6,7 @@
 #define MANAGEMYSELF_USERSQL_H
 
 #include "fs/SqLiteBase.h"
+#include <SQLiteCpp/Database.h>
 #include <qdebug.h>
 #include <qdir.h>
 #include <qobject.h>
@@ -57,8 +58,14 @@ class UserSql : public SqLiteBase {
 
         QString getStatusByMonthJson(int year, int month) const;
 
+        QString search(const QString& query, const QString& scope, bool caseSensitive, bool useRegex) const;
+
+		QVariant getGraphData(int scope, int filter, const QString& start_date, const QString& end_date) const;
+
 private:
       QString m_pathToUserDb;
+
+      QString searchGroupedAll(SQLite::Database &db) const;
 };
 
 #endif // MANAGEMYSELF_USERSQL_H

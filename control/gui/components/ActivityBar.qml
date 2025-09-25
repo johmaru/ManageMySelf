@@ -165,6 +165,8 @@ Pane {
         Repeater {
             model: [
                 { key: "toggle",  name: qsTr("ToggleView"),  iconSource: "qrc:/icons/toggle-column-svgrepo-com.svg", display: "iconOnly" },
+                { key: "search",  name:qsTr("Search"),       iconName: "search",                                  display: "textUnder"},
+                { key: "graph",  name:qsTr("Graph"),        iconName: "chart-bar",                               display: "textUnder"},
                 { key: "settings",name: qsTr("Settings"),    iconName: "settings",                                display: "textUnder" },
                 { key: "back",    name: qsTr("Back"),        iconName: "arrow-left",                              display: "textUnder" }
             ]

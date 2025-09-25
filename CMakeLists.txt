@@ -1,4 +1,18 @@
 cmake_minimum_required(VERSION 3.31)
+
+# vcpkg toolchain の自動適用（C:/vcpkg を優先）
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    if(EXISTS "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "vcpkg toolchain file")
+    elseif(DEFINED ENV{VCPKG_ROOT} AND EXISTS "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE FILEPATH "vcpkg toolchain file")
+    endif()
+endif()
+
+if(NOT DEFINED VCPKG_TARGET_TRIPLET AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "vcpkg target triplet")
+endif()
+
 project(ManageMySelf)
 
 # Qt MinGW環境でlibssp.aが見つからない問題への対策
@@ -22,22 +36,46 @@ if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
     if(DEFINED ENV{QT_PREFIX_PATH} AND NOT "$ENV{QT_PREFIX_PATH}" STREQUAL "")
         set(CMAKE_PREFIX_PATH "$ENV{QT_PREFIX_PATH}")
     else()
-        set(CMAKE_PREFIX_PATH "C:/Qt/6.9.1/mingw_64")
+        set(CMAKE_PREFIX_PATH "C:/Qt/6.9.2/msvc2022_64")
     endif()
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS 
-    Core 
-    Widgets 
-    LinguistTools 
-    Gui 
-    Qml 
-    Quick 
-    QuickControls2 
+# Qt の場所を環境変数または既定から決定し、必ず検索パスに追加する
+set(_qt_prefix "")
+if(DEFINED ENV{QT_PREFIX_PATH} AND NOT "$ENV{QT_PREFIX_PATH}" STREQUAL "")
+    set(_qt_prefix "$ENV{QT_PREFIX_PATH}")
+elseif(DEFINED ENV{QTDIR} AND NOT "$ENV{QTDIR}" STREQUAL "")
+    set(_qt_prefix "$ENV{QTDIR}")
+else()
+    set(_qt_prefix "C:/Qt/6.9.2/msvc2022_64")
+endif()
+
+# Qt6 のconfigパスを優先追加（vcpkgのCMAKE_PREFIX_PATH上書きを回避）
+if(EXISTS "${_qt_prefix}/lib/cmake/Qt6/Qt6Config.cmake")
+    list(PREPEND CMAKE_PREFIX_PATH "${_qt_prefix}")
+    # 直接DIRを指定して確実に解決
+    set(Qt6_DIR "${_qt_prefix}/lib/cmake/Qt6" CACHE PATH "Qt6 cmake package dir")
+else()
+    message(WARNING "Qt6Config.cmake not found under ${_qt_prefix}. Set QTDIR or QT_PREFIX_PATH to your Qt root (e.g. C:/Qt/6.9.2/msvc2022_64).")
+endif()
+
+# vcpkgがシステム(非vcpkg)パッケージの採用を許可する
+set(VCPKG_ALLOW_SYSTEM_LIBS ON CACHE BOOL "Allow non-vcpkg system packages" FORCE)
+
+# 可能ならQtの最小バージョンを明示（6.9.2でも一致します）
+find_package(Qt6 6.9 REQUIRED COMPONENTS
+    Core
+    Widgets
+    LinguistTools
+    Gui
+    Qml
+    Quick
+    QuickControls2
     QuickLayouts
+    Charts
 )
 
-find_package(SQLiteCpp REQUIRED)
+find_package(SQLiteCpp CONFIG REQUIRED)
 
 qt_policy(SET QTP0001 NEW)
 
@@ -151,6 +189,7 @@ target_link_libraries(ManageMySelf
         Qt::QuickControls2
         Qt::QuickLayouts
         SQLiteCpp
+        Qt::Charts
 )
 
 if(Qt6_Qml_FOUND)

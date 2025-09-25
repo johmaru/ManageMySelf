@@ -18,6 +18,21 @@ ApplicationWindow {
 
     property bool forceClose: false
 
+    property string appIdent: (typeof applicationIdent === "string" && applicationIdent.length > 0)
+                              ? applicationIdent : "main"
+
+    property string initWorkspace: (typeof initialWorkspacePath === "string" && initialWorkspacePath.length >0)
+                              ? initialWorkspacePath : ""
+
+    property int initScope: initialScope
+    property int initFillter: initialFilter
+
+    property string initTo: (typeof initialTo === "string" && initialTo.length > 0)
+                        ? initialTo: ""
+    
+    property string initFrom: (typeof initialFrom === 'string' && initialFrom.length > 0)
+                        ? initialFrom: ""
+
     width: settings.windowWidth
     height: settings.windowHeight
 
@@ -25,7 +40,14 @@ ApplicationWindow {
     Material.primary: Material.Blue
     Material.accent: Material.Blue
 
-    title: qsTr("TitleMain")
+    title: {
+
+        const item = stackView.currentItem;
+        return item && item.title !== "undefined" && item.title !== ""
+              ? item.title
+              : qsTr("TitleMain");
+
+    }
 
     onClosing: function (close) {
         if (forceClose) {
@@ -43,7 +65,7 @@ ApplicationWindow {
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: mainContent
+        initialItem: root.appIdent === "graph" ? graphViewerComponent : mainContent
     }
 
     Component {
@@ -330,12 +352,26 @@ ApplicationWindow {
                 }
             }
 
+            onRequestCreateNewWindowForGraph: function (path, Scope, Fillter, toStr, fromStr) {
+                settings.openGraphWindow(path, Scope, Fillter, toStr, fromStr);
+            }
+
             onRequestNavigateMarkdownEditor: function(contentPath) {
                 stackView.push(markdownEditorComponent, { markdownContentPath: contentPath });
             }
 
             onRequestNavigateMarkdownViewer: function(contentPath) {
                 stackView.push(markdownViewerComponent, { markdownContentPath: contentPath });
+            }
+
+            onRequestSearch: function(query, scope, caseSensitive, useRegex, path) {
+                let resultsJson = settings.search(query, scope, caseSensitive, useRegex, path);
+                if (resultsJson) {
+                    mainUserPageInstance.updateSearchResults(resultsJson);
+                } else {
+                    errorLabel.text = qsTr("Search operation failed");
+                    errorDialog.open();
+                }
             }
 
             Component {
@@ -638,6 +674,32 @@ ApplicationWindow {
                 }
                 onRejected: openWorkspaceItem.pendingDeleteName = ""
             }
+        }
+    }
+
+    Component {
+    
+        id: graphViewerComponent
+        GraphViewer {
+           id: graphViewer
+
+           workspace: root.initWorkspace
+           scope: root.initScope
+           fillter: root.initFillter
+           to: root.initTo
+           from: root.initFrom
+
+           onRequestGraphData: function(workspace, scope, fillter, to, from) {
+               console.log("Requesting graph data for workspace:", workspace, "scope:", scope, "fillter:", fillter, "to:", to, "from:", from);
+               let graphData = settings.getGraphData(workspace, scope, fillter, to, from);
+               if (graphData) {
+                   graphViewer.graphData = graphData;
+                   graphViewer.updateGraph();
+               } else {
+                   errorLabel.text = qsTr("Failed to retrieve graph data");
+                   errorDialog.open();
+               }
+           }
         }
     }
 

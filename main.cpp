@@ -18,16 +18,58 @@
 
 #include "fs/SqLiteBase.h"
 #include "fs/global_settings.h"
+#include <QCommandLineParser>
 
 int main(int argc, char *argv[]) {
 
     QGuiApplication a(argc, argv);
+    a.setQuitOnLastWindowClosed(true);
+
+	QCommandLineParser parser;
+	parser.setApplicationDescription("ManageMySelf - Personal Management Application");
+	parser.addHelpOption();
+
+    QCommandLineOption parentWinIdOpt(QStringLiteral("parent-winid"),
+        QStringLiteral("Parent window WId (owner)"),
+        QStringLiteral("id"));
+    QCommandLineOption identOpt(("ident"),
+        QStringLiteral("Unique identifier for the application instance"),
+		QStringLiteral("n"));
+    QCommandLineOption workspaceOpt(QStringLiteral("workspace"),
+        QStringLiteral("Workspace path"), QStringLiteral("path"));
+    QCommandLineOption scopeOpt(QStringLiteral("scope"), QStringLiteral("Graph scope"), QStringLiteral("n"));
+    QCommandLineOption filterOpt(QStringLiteral("filter"), QStringLiteral("Graph filter"), QStringLiteral("n"));
+	QCommandLineOption toOpt(QStringLiteral("to"), QStringLiteral("Graph to date"), QStringLiteral("n"));
+	QCommandLineOption fromOpt(QStringLiteral("from"), QStringLiteral("Graph from date"), QStringLiteral("n"));
+    parser.addOption(parentWinIdOpt);
+    parser.addOption(workspaceOpt);
+    parser.addOption(scopeOpt);
+    parser.addOption(filterOpt);
+    parser.addOption(identOpt);
+	parser.addOption(toOpt);
+	parser.addOption(fromOpt);
+    parser.process(a);
+
+
+	const QString parentIdStr = parser.value(parentWinIdOpt);
+	const QString workspacePathArg = parser.value(workspaceOpt);
+	const int scopeArgs = parser.value(scopeOpt).toInt();
+	const int filterArgs = parser.value(filterOpt).toInt();
+	const QString identStr = parser.value(identOpt);
+	const QString toStr = parser.value(toOpt);
+	const QString fromStr = parser.value(fromOpt);
 
     a.setOrganizationName("Johma");
     a.setApplicationName("ManageMySelf");
 
     QQmlApplicationEngine engine;
 
+    engine.rootContext()->setContextProperty(QStringLiteral("initialWorkspacePath"), workspacePathArg);
+	engine.rootContext()->setContextProperty(QStringLiteral("initialScope"), scopeArgs);
+	engine.rootContext()->setContextProperty(QStringLiteral("initialFilter"), filterArgs);
+	engine.rootContext()->setContextProperty(QStringLiteral("initialTo"), toStr);
+	engine.rootContext()->setContextProperty(QStringLiteral("initialFrom"), fromStr);
+	engine.rootContext()->setContextProperty(QStringLiteral("applicationIdent"), identStr.isEmpty() ? QStringLiteral("main") : identStr);
     engine.addImportPath("qrc:/");
   
     const QString envQmlPath = qEnvironmentVariable("QT_QML_IMPORT_PATH");
@@ -93,6 +135,32 @@ int main(int argc, char *argv[]) {
         }
         
         return -1;
+    }
+
+	auto* win = qobject_cast<QQuickWindow*>(engine.rootObjects().front());
+    std::unique_ptr<QWindow> foreignOwner;
+
+    if (!parentIdStr.isEmpty() && win)
+    {
+        bool ok = false;
+		quint64 id = parentIdStr.toULongLong(&ok, 0);
+        if (ok) {
+            QWindow *parent = QWindow::fromWinId((WId)id);
+            if (parent) {
+                foreignOwner.reset(parent);
+                win->setTransientParent(parent);
+                win->setFlags(win->flags() | Qt::Window);
+                QObject::connect(win, &QQuickWindow::closing, win,
+                    [&foreignOwner](QQuickCloseEvent*) {foreignOwner.reset(); });
+
+                QObject::connect(&a, &QCoreApplication::aboutToQuit, &a,
+                    [&foreignOwner] {foreignOwner.reset(); });
+            } else {
+                qWarning() << "Failed to find window with WId" << id << "to set as parent.";
+            }
+        } else {
+            qWarning() << "Invalid parent window ID format:" << parentIdStr;
+		}
     }
 
     return a.exec();
