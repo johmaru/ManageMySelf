@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QIcon>
 #include <QTranslator>
@@ -22,7 +22,7 @@
 
 int main(int argc, char *argv[]) {
 
-    QGuiApplication a(argc, argv);
+    QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(true);
 
 	QCommandLineParser parser;

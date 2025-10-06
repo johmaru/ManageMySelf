@@ -781,18 +781,34 @@ QVariant UserSql::getGraphData(int scope, int filter, const QString& start_date,
 		}
 
         QHash<QString, QVariantMap> status_data;
-		SQLite::Statement status_query(db, "SELECT date(created_at), mood, free_mood_text, sleep_time, wake_up_time, temperature FROM user_status WHERE date(created_at) BETWEEN ? AND ?");
+
+        QString status_sq1;
+        if (scope == 0) {
+			status_sq1 = "SELECT date(created_at), mood, free_mood_text, sleep_time, wake_up_time, temperature FROM user_status WHERE date(created_at) BETWEEN ? AND ?";
+		}
+        else if (scope == 1) {
+			status_sq1 = "SELECT date(created_at), sleep_time, wake_up_time FROM user_status WHERE date(created_at) BETWEEN ? AND ?";
+        }
+
+		SQLite::Statement status_query(db, status_sq1.toStdString());
         status_query.bind(1, from.toString("yyyy-MM-dd").toStdString());
         status_query.bind(2, to.toString("yyyy-MM-dd").toStdString());
         while (status_query.executeStep()) {
             QString date = QString::fromStdString(status_query.getColumn(0).getText());
             QVariantMap data;
-            data.insert("mood", status_query.getColumn(1).getInt());
-            data.insert("free_mood_text", QString::fromStdString(status_query.getColumn(2).getText()));
-            data.insert("sleep_time", status_query.getColumn(3).getDouble());
-            data.insert("wake_up_time", status_query.getColumn(4).getDouble());
-            data.insert("temperature", status_query.getColumn(5).getDouble());
-            status_data.insert(date, data);
+
+            if (scope == 1) {
+                data.insert("sleep_time", status_query.getColumn(1).getDouble());
+				data.insert("wake_up_time", status_query.getColumn(2).getDouble());
+            }
+            else {
+                data.insert("mood", status_query.getColumn(1).getInt());
+                data.insert("free_mood_text", QString::fromStdString(status_query.getColumn(2).getText()));
+                data.insert("sleep_time", status_query.getColumn(3).getDouble());
+                data.insert("wake_up_time", status_query.getColumn(4).getDouble());
+                data.insert("temperature", status_query.getColumn(5).getDouble());
+            }
+			status_data.insert(date, data);
         }
 
         for (QDate cursor = from; cursor <= to; cursor = cursor.addDays(1)) {
@@ -821,7 +837,7 @@ QVariant UserSql::getGraphData(int scope, int filter, const QString& start_date,
     root.insert("start", start_out);
     root.insert("end", end_out);
     root.insert("days", days_list);
+    root.insert("scope", scope);
 
 	return root;
-    
 }

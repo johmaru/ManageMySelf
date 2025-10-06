@@ -637,7 +637,7 @@ Page {
                             id: graphScopeComboBox
                             anchors.horizontalCenter: parent.horizontalCenter
                             width: 200
-                            model: [ qsTr("With Diary"), qsTr("With Status") ]
+                            model: [ qsTr("All Metrics"), qsTr("Sleep & Wake Only") ]
                             currentIndex: 0
 
                             onCurrentIndexChanged: {
