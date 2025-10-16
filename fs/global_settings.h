@@ -32,8 +32,8 @@
 class GlobalSettings final : public QObject, public JsonSettingsBase {
     Q_OBJECT
 
-    Q_PROPERTY(int windowWidth READ getWindowWidth NOTIFY windowSizeChanged)
-    Q_PROPERTY(int windowHeight READ getWindowHeight NOTIFY windowSizeChanged)
+    Q_PROPERTY(int windowWidth READ getWindowWidth WRITE setWindowWidth NOTIFY windowSizeChanged)
+    Q_PROPERTY(int windowHeight READ getWindowHeight WRITE setWindowWidth NOTIFY windowSizeChanged)
     Q_PROPERTY(QString theme READ getTheme WRITE setTheme NOTIFY themeChanged)
     Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString activityBarTheme READ getActivityBarTheme WRITE setActivityBarTheme NOTIFY activityBarThemeChanged)
@@ -163,6 +163,38 @@ public:
 
             emit activityBarThemeChanged();
         }
+    }
+
+    Q_INVOKABLE void setWindowWidth(const int width) {
+        if (m_windowSize.width() == width) return;
+        m_windowSize.setWidth(width);
+        if (!m_loading) {
+			const QString filePath = this->getFilePath();
+			QFile saveFile(filePath);
+            if (!saveFile.open(QIODevice::WriteOnly)) {
+				qWarning() << "Couldn't open settings file for writing:" << filePath;
+            } else {
+                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+				saveFile.close();
+            }
+        }
+		emit windowSizeChanged();
+    }
+
+    Q_INVOKABLE void setWindowHeight(const int height) {
+	    if (m_windowSize.height() == height) return;
+        m_windowSize.setHeight(height);
+        if (!m_loading) {
+            const QString filePath = this->getFilePath();
+			QFile saveFile(filePath);
+            if (!saveFile.open(QIODevice::WriteOnly)) {
+				qWarning() << "Couldn't open settings file for writing:" << filePath;
+            } else {
+                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+				saveFile.close();
+            }
+        }
+		emit windowSizeChanged();
     }
 
 signals:

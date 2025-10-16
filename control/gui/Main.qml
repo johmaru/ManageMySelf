@@ -188,7 +188,56 @@ ApplicationWindow {
                             spacing: 8
                             padding: 8
                             Label { text: qsTr("Settings") }
-                            Label { text: qsTr("Currently does not support this feature") }
+                             RowLayout {
+                                spacing: 8
+                                Label { text: qsTr("Theme:") 
+                                        Layout.alignment: Qt.AlignVCenter 
+                                }
+                                ComboBox {
+                                    id: themeComboBox
+                                    model: [ qsTr("Light"), qsTr("Dark") ]
+                                    currentIndex: settings.theme === "dark" ? 1 : 0
+                                    onCurrentIndexChanged: {
+                                        settings.setTheme(currentIndex === 0 ? "light" : "dark");
+                                    }
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 8
+                                Label { text: qsTr("Width")
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                SpinBox {
+                                    id: widthSpinBox
+                                    from: 400
+                                    to: 3840
+                                    stepSize: 20
+                                    value: settings.windowWidth
+                                    onValueChanged: {
+                                        settings.setWindowWidth(value);
+                                        root.width = value;
+                                    }
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 8
+                                Label { text: qsTr("Height")
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                SpinBox {
+                                    id: heightSpinBox
+                                    from: 300
+                                    to: 2160
+                                    stepSize: 20
+                                    value: settings.windowHeight
+                                    onValueChanged: {
+                                        settings.setWindowHeight(value);
+                                        root.height = value;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
