@@ -238,6 +238,18 @@ ApplicationWindow {
                                     }
                                 }
                             }
+
+                            RowLayout {
+                                spacing: 8
+                                Label {text: qsTr("isAnyItemCreatedAfterOpening")}
+                                CheckBox {
+                                    id: anyItemCreatedCheckBox
+                                    checked: settings.isAnyItemCreatedAfterOpening
+                                    onCheckedChanged: {
+                                        settings.setIsAnyItemCreatedAfterOpening(checked);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

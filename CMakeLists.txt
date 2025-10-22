@@ -31,7 +31,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Allow overriding Qt path via env QT_PREFIX_PATH; fallback to default
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
 if(NOT DEFINED CMAKE_PREFIX_PATH OR CMAKE_PREFIX_PATH STREQUAL "")
     if(DEFINED ENV{QT_PREFIX_PATH} AND NOT "$ENV{QT_PREFIX_PATH}" STREQUAL "")
         set(CMAKE_PREFIX_PATH "$ENV{QT_PREFIX_PATH}")
@@ -62,7 +64,6 @@ endif()
 # vcpkgがシステム(非vcpkg)パッケージの採用を許可する
 set(VCPKG_ALLOW_SYSTEM_LIBS ON CACHE BOOL "Allow non-vcpkg system packages" FORCE)
 
-# 可能ならQtの最小バージョンを明示（6.9.2でも一致します）
 find_package(Qt6 6.9 REQUIRED COMPONENTS
     Core
     Widgets

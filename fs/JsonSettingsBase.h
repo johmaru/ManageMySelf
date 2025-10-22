@@ -8,24 +8,24 @@
 #include <QJsonObject>
 
 class JsonSettingsBase {
-public:
+  public:
     virtual ~JsonSettingsBase() = default;
 
-    virtual int migrationJson(const QString filepath) = 0;
+    virtual int migrationJson(QString filepath) = 0;
 
-    [[nodiscard]] virtual QJsonObject toJson()const = 0;
+    [[nodiscard]] virtual QJsonObject toJson() const = 0;
 
-    virtual void loadFromJson(const QJsonObject &json) = 0;
+    virtual void loadFromJson(const QJsonObject& json) = 0;
 
-    [[nodiscard]] bool saveToFile(const QString &filePath) const;
+    [[nodiscard]] bool saveToFile(const QString& filePath) const;
 
-    bool loadFromFile(const QString &filePath);
+    bool loadFromFile(const QString& filePath);
 
     [[nodiscard]] virtual QString getFilePath() const = 0;
 
-    [[nodiscard]] static int saveToFileAny(const QString &filePath, const QJsonObject &json);
+    [[nodiscard]] static int saveToFileAny(const QString& filePath, const QJsonObject& json);
 
-    [[nodiscard]] static QJsonObject loadFromFileAny(const QString &filePath);
+    [[nodiscard]] static QJsonObject loadFromFileAny(const QString& filePath);
 };
 
-#endif //MANAGEMYSELF_JSONSETTINGSBASE_H
+#endif // MANAGEMYSELF_JSONSETTINGSBASE_H

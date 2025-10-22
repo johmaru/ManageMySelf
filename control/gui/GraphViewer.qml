@@ -17,6 +17,15 @@ Page {
     property string to: ""
     property string from: ""
 
+    property var chartConfigs: [
+        { title: "Sleep", accessor: "sleep_time", color: "#FF6B6B", type: "time", yRange: [0, 24] },
+        { title: "Wake", accessor: "wake_up_time", color: "#4ECDC4", type: "time", yRange: [0, 24] },
+        { title: "Mood", accessor: "mood", color: "#1A535C", type: "number", yRange: [0, 5] },
+        { title: "Temp", accessor: "temperature", color: "#D0021B", type: "number", yRange: [34, 38] }
+    ]
+
+    property var seriesRegistry: ({})
+
     property var graphData: ({}) // { start, end, days:[ {date, diary_exists, status:{...}} ] }
 
     signal requestGraphData(string workspace, int scope, int fillter, string to, string from)
@@ -76,143 +85,215 @@ Page {
     }
 
     function updateGraph() {
-
-           if (!graphData || typeof graphData != "object") {
-               console.log("graphData is not an object")
-               return;
-           }
-           var days = graphData.days
-           console.log("graphData.days:", days)
-           console.log("graphData.days type:", typeof days)
-           if (!days) {
-               console.warn("graphData.days is null or undefined")
-               return;     
-           }
-           
-           sleepSeries.clear();
-           wakeUpSeries.clear();
-           moodSeries.clear();
-           temperatureSeries.clear();
-        
-           var sleepPoints = []
-           var wakeUpPoints = []
-           var moodPoints = []
-           var temperaturePoints = []
-           for (var i = 0; i < days.length; ++i) {
-                var day = days[i]
-                console.log("Day", i, ":", JSON.stringify(day))
-            
-                if (!day || !day.status) continue;
-
-                var status = day.status
-                var time = new Date(day.date + "T00:00:00").getTime()
-
-               if (status.sleep_time !== undefined) {
-                    var sleepTime = parseTime(status.sleep_time)
-                    if (isFinite(sleepTime)) {
-                        sleepPoints.push({ x: time, y: sleepTime, yPoint: formatHHmm(sleepTime) })
-                    }     
-               }
-
-               if (status.wake_up_time !== undefined) {
-                    var wakeUpTime = parseTime(status.wake_up_time)
-                    if (isFinite(wakeUpTime)) {
-                        wakeUpPoints.push({ x: time, y: wakeUpTime, yPoint: formatHHmm(wakeUpTime) })
-                    }     
-               }
-
-              if (scope === 0) {
-                    if (status.mood !== undefined) {
-                        var mood = Number(status.mood)
-                        if (isFinite(mood)) {
-                            moodPoints.push({ x: time, y: mood, yPoint: String(mood) })
-                        }     
-                    }
-
-                   if (status.temperature !== undefined) {
-                        var temperature = Number(status.temperature)
-                        if (isFinite(temperature)) {
-                            temperaturePoints.push({ x: time, y: temperature, yPoint: String(temperature) })
-                        }     
-                    }
-               }
-           }
-
-        console.log("sleepPoints counts:", sleepPoints.length)
-
-        for (var a = 0; a < sleepPoints.length; ++a) sleepSeries.append(sleepPoints[a].x, sleepPoints[a].y)
-        for (var b = 0; b < wakeUpPoints.length;  ++b) wakeUpSeries.append(wakeUpPoints[b].x, wakeUpPoints[b].y)
-        if (scope === 0) {
-            for (var c = 0; c < moodPoints.length; ++c) moodSeries.append(moodPoints[c].x, moodPoints[c].y)
-            for (var d = 0; d < temperaturePoints.length; ++d) temperatureSeries.append(temperaturePoints[d].x, temperaturePoints[d].y)
+        if (!graphData || typeof graphData !== "object") {
+            console.log("graphData is not an object")
+            return
+        }
+        var days = graphData.days
+        console.log("graphData.days:", days)
+        console.log("graphData.days type:", typeof days)
+        if (!days) {
+            console.warn("graphData.days is null or undefined")
+            return
         }
 
-        var allPoints = (scope === 0)
-            ? sleepPoints.concat(wakeUpPoints, moodPoints, temperaturePoints)
-            : sleepPoints.concat(wakeUpPoints)
+        var keys = Object.keys(seriesRegistry)
+        if (!keys.length)
+            return
 
-        if (allPoints.length > 0) {
-            var minX = allPoints[0].x
-            var maxX = allPoints[0].x
+        var oneDayMs = 24 * 3600 * 1000
 
-            for (var k = 1; k < allPoints.length; ++k) {
-                if (allPoints[k].x < minX) minX = allPoints[k].x
-                if (allPoints[k].x > maxX) maxX = allPoints[k].x
+        for (var i = 0; i < keys.length; ++i) {
+            var key = keys[i]
+            var entry = seriesRegistry[key]
+            if (!entry || !entry.series)
+                continue
+
+            var cfg = entry.config || null
+            var series = entry.series
+            var axisX = entry.axisX
+            var axisY = entry.axisY
+
+            series.clear()
+
+            var points = []
+            for (var d = 0; d < days.length; ++d) {
+                var day = days[d]
+                console.log("Day", d, ":", JSON.stringify(day))
+                if (!day || !day.status)
+                    continue
+                if (day.status[key] === undefined)
+                    continue
+
+                var rawValue = day.status[key]
+                var value = (cfg && cfg.type === "time") ? parseTime(rawValue) : Number(rawValue)
+                if (!isFinite(value))
+                    continue
+
+                var timeStamp = new Date(day.date + "T00:00:00").getTime()
+                series.append(timeStamp, value)
+                points.push({ x: timeStamp, y: value })
             }
+
+            if (!points.length) {
+                if (cfg && cfg.yRange) {
+                    axisY.min = cfg.yRange[0]
+                    axisY.max = cfg.yRange[1]
+                }
+                continue
+            }
+
+            var minX = points[0].x
+            var maxX = points[0].x
+            var minY = points[0].y
+            var maxY = points[0].y
+
+            for (var p = 1; p < points.length; ++p) {
+                if (points[p].x < minX) minX = points[p].x
+                if (points[p].x > maxX) maxX = points[p].x
+                if (points[p].y < minY) minY = points[p].y
+                if (points[p].y > maxY) maxY = points[p].y
+            }
+
             if (minX === maxX) {
-                var oneDay = 24 * 3600 * 1000
-                axisX.min = new Date (minX - oneDay)
-                axisX.max = new Date (maxX + oneDay)
+                axisX.min = new Date(minX - oneDayMs)
+                axisX.max = new Date(maxX + oneDayMs)
             } else {
-                axisX.min = new Date (minX)
-                axisX.max = new Date (maxX)
+                axisX.min = new Date(minX)
+                axisX.max = new Date(maxX)
+            }
+
+            if (cfg && cfg.type === "time") {
+                var swRange = clampRange1pt(Math.max(0, Math.floor(minY) - 1),
+                                            Math.min(24, Math.ceil(maxY) + 1), 1, 2)
+                axisY.min = Math.max(0, swRange.min)
+                axisY.max = Math.min(24, swRange.max)
+            } else if (key === "mood") {
+                var moodRange = clampRange1pt(minY, maxY, 0.5, 1)
+                axisY.min = Math.floor(Math.min(0, moodRange.min))
+                axisY.max = Math.ceil(Math.max(5, moodRange.max))
+            } else if (key === "temperature") {
+                axisY.min = Math.floor(Math.min(34, minY - 0.3))
+                axisY.max = Math.ceil(Math.max(38, maxY + 0.3))
+            } else {
+                axisY.min = Math.floor(minY)
+                axisY.max = Math.ceil(maxY)
             }
         }
-
-        if (sleepPoints.length || wakeUpPoints.length) {
-            var allSW = sleepPoints.concat(wakeUpPoints)
-            var smin = 24, smax = 0
-            for (var m = 0; m < allSW.length; ++m) {
-                if (allSW[m].y < smin) smin = allSW[m].y
-                if (allSW[m].y > smax) smax = allSW[m].y
-            }
-            var swRange = clampRange1pt(Math.max(0, Math.floor(smin) - 1),
-                                        Math.min(24, Math.ceil(smax) + 1), 1, 2)
-            axisSleep.min = Math.max(0, swRange.min)
-            axisSleep.max = Math.min(24, swRange.max)
-        }
-
-        if (scope === 0 &&moodPoints.length) {
-            var mmin = moodPoints[0].y
-            var mmax = moodPoints[0].y
-            for (var m = 1; m < moodPoints.length; ++m) {
-                if (moodPoints[m].y < mmin) mmin = moodPoints[m].y
-                if (moodPoints[m].y > mmax) mmax = moodPoints[m].y
-            }
-            var moodRange = clampRange1pt(mmin, mmax, 0.5, 1)
-            axisMood.min = Math.floor(Math.min(0, moodRange.min))
-            axisMood.max = Math.ceil(Math.max(5, moodRange.max))
-        }
-
-        if (scope ===0 && temperaturePoints.length) {
-            var tmin = temperaturePoints[0].y
-            var tmax = temperaturePoints[0].y
-            for (var t = 1; t < temperaturePoints.length; ++t) {
-                if (temperaturePoints[t].y < tmin) tmin = temperaturePoints[t].y
-                if (temperaturePoints[t].y > tmax) tmax = temperaturePoints[t].y
-            }
-            var pad = 0.3
-            axisTemp.min = Math.floor(Math.min(34, tmin - pad))
-            axisTemp.max = Math.ceil(Math.max(38, tmax + pad))
-        }
-
-        moodSeries.visible        = (scope === 0 && moodPoints.length > 0)
-        temperatureSeries.visible = (scope === 0 && temperaturePoints.length > 0)
-        axisMood.visible          = (scope === 0)
-        axisTemp.visible          = (scope === 0)
     }
 
-    ChartView {
+    function registerSeries(key, series, axisX, axisY, config) {
+        seriesRegistry[key] = { series: series, axisX: axisX, axisY: axisY, config: config }
+        updateGraph()
+    }
+
+    function unregisterSeries(key) {
+        delete seriesRegistry[key]
+    }
+
+    GridLayout {
+        id: chartContainer
+        anchors.fill: parent
+        columns: 2
+        rowSpacing: 16
+        columnSpacing: 16
+        Repeater {
+            model: scope === 0 ? chartConfigs : chartConfigs.slice(0, 2)
+            delegate: ChartView {
+                required property var modelData
+                Layout.columnSpan: 1
+                Layout.fillWidth: true
+                Layout.preferredWidth: chartContainer.width / 2 - chartContainer.columnSpacing
+                Layout.minimumWidth: Layout.preferredWidth
+                Layout.maximumWidth: Layout.preferredWidth
+                Layout.preferredHeight: 280
+                antialiasing: true
+                legend.visible: false
+                title: modelData.title
+                theme: ChartView.ChartThemeBrownSand
+
+                DateTimeAxis {
+                    id: axisX
+                    format: "MM-dd"
+                    labelsAngle: -45
+                    tickCount: 6
+                }
+
+                ValueAxis {
+                    id: axisY
+                    min: modelData.yRange ? modelData.yRange[0] : 0
+                    max: modelData.yRange ? modelData.yRange[1] : 10
+                }
+
+                LineSeries {
+                    id: lineSeries
+                    axisX: axisX
+                    axisY: axisY
+                    color: modelData.color
+                    width: 2
+                    pointsVisible: true
+                }
+
+                Component.onCompleted: graphViewerPage.registerSeries(
+                                           modelData.accessor, lineSeries, axisX, axisY, modelData)
+                Component.onDestruction: graphViewerPage.unregisterSeries(modelData.accessor)
+
+                PropertyAnimation on opacity {
+                    duration: 120
+                    from: 0
+                    to: 1
+                }
+            }
+        }
+    }
+
+    function populateSeries(key) {
+        var series = null;
+        switch(key) {
+            case "sleep_time":
+                series = sleepSeries;
+                break;
+            case "wake_up_time":
+                series = wakeUpSeries;
+                break;
+            case "mood":
+                series = moodSeries;
+                break;
+            case "temperature":
+                series = temperatureSeries;
+                break;
+            default:
+                console.warn("Unknown key for series:", key);
+                return;
+        }
+
+        series.clear();
+
+        if (!graphData || !graphData.days) {
+            console.warn("No graph data available");
+            return;
+        }
+
+        for (var i = 0; i < graphData.days.length; ++i) {
+            var day = graphData.days[i];
+            if (!day || !day.status || day.status[key] === undefined) continue;
+
+            var value = day.status[key];
+            var time = new Date(day.date + "T00:00:00").getTime();
+
+            if (key === "sleep_time" || key === "wake_up_time") {
+                value = parseTime(value);
+            } else {
+                value = Number(value);
+            }
+
+            if (isFinite(value)) {
+                series.append(time, value);
+            }
+        }
+    }
+
+    /* ChartView {
         id: chartView
         anchors.fill: parent
         antialiasing: true
@@ -298,6 +379,6 @@ Page {
             pointsVisible: true
             visible: scope === 0
         }
-    }
+    } */
 
 }

@@ -3,16 +3,23 @@
 // Created by Johma on 25/07/22.
 //
 
+#include <cstdint>
 #ifndef MANAGEMYSELF_GLOBAL_SETTINGS_H
 #define MANAGEMYSELF_GLOBAL_SETTINGS_H
 
-#include <QFile>
-
 #include "JsonSettingsBase.h"
-#include <QString>
-#include <QSize>
+
+#include <QFile>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QMetaType>
 #include <QObject>
+#include <QQmlEngine>
+#include <QSize>
+#include <QString>
 #include <QStringList>
+#include <QVariant>
+#include <array>
 #include <cstddef>
 #include <qcontainerfwd.h>
 #include <qcoreapplication.h>
@@ -22,12 +29,6 @@
 #include <qqmlengine.h>
 #include <qtmetamacros.h>
 #include <qtranslator.h>
-#include <QQmlEngine>
-#include <array>
-#include <QMetaType>
-#include <QVariant>
-#include <QJsonValue>
-#include <QJsonObject>
 
 class GlobalSettings final : public QObject, public JsonSettingsBase {
     Q_OBJECT
@@ -36,39 +37,59 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
     Q_PROPERTY(int windowHeight READ getWindowHeight WRITE setWindowWidth NOTIFY windowSizeChanged)
     Q_PROPERTY(QString theme READ getTheme WRITE setTheme NOTIFY themeChanged)
     Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
-    Q_PROPERTY(QString activityBarTheme READ getActivityBarTheme WRITE setActivityBarTheme NOTIFY activityBarThemeChanged)
+    Q_PROPERTY(QString activityBarTheme READ getActivityBarTheme WRITE setActivityBarTheme NOTIFY
+                   activityBarThemeChanged)
+    Q_PROPERTY(bool isAnyItemCreatedAfterOpening READ getIsAnyItemCreatedAfterOpening WRITE
+                   setIsAnyItemCreatedAfterOpening NOTIFY isAnyItemCreatedAfterOpeningChanged)
 
-public slots:
-    Q_INVOKABLE int createWorkspaceFromQml(const QString &userName, const QString &name, const QString &path);
-    Q_INVOKABLE QStringList getWorkspaceWithName(const QString &name) const;
-    Q_INVOKABLE int createDiary(int year, int month, int day, const QString &title, const QString &path) const;
-    Q_INVOKABLE int createStatus(const QString &path) const;
-    Q_INVOKABLE int editStatus(int year, int month, int day, const QString &jsonString, const QString &path) const;
-    Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString &path) const;
-    Q_INVOKABLE QString getMonthUserStatusData(int year, int month, const QString &path) const;
-    Q_INVOKABLE QString loadMarkdownFile(const QString &filePath) const;
-    Q_INVOKABLE int writeMarkdownFile(const QString &filePath, const QString &content) const;
-    Q_INVOKABLE QString search(const QString& query, const QString& scope, bool casseSensitive, bool useRegex, const QString& path) const;
-    Q_INVOKABLE int openGraphWindow(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr);
-	Q_INVOKABLE [[nodiscard]]QVariant getGraphData(const QString& workspacePath, int scope, int filter, const QString& toStr, const QString& fromStr) const;
+  public slots:
+    Q_INVOKABLE int createWorkspaceFromQml(const QString& userName, const QString& name,
+                                           const QString& path);
+    Q_INVOKABLE QStringList getWorkspaceWithName(const QString& name) const;
+    Q_INVOKABLE int createDiary(int year, int month, int day, const QString& title,
+                                const QString& path) const;
+    Q_INVOKABLE int createStatus(const QString& path) const;
+    Q_INVOKABLE int editStatus(int year, int month, int day, const QString& jsonString,
+                               const QString& path) const;
+    Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString& path) const;
+    Q_INVOKABLE QString getMonthUserStatusData(int year, int month, const QString& path) const;
+    Q_INVOKABLE QString loadMarkdownFile(const QString& filePath) const;
+    Q_INVOKABLE int writeMarkdownFile(const QString& filePath, const QString& content) const;
+    Q_INVOKABLE QString search(const QString& query, const QString& scope, bool casseSensitive,
+                               bool useRegex, const QString& path) const;
+    Q_INVOKABLE int openGraphWindow(const QString& workspacePath, int scope, int filter,
+                                    const QString& toStr, const QString& fromStr);
+    [[nodiscard]] Q_INVOKABLE QVariant getGraphData(const QString& workspacePath, int scope,
+                                                    int filter, const QString& toStr,
+                                                    const QString& fromStr) const;
 
-    Q_INVOKABLE QStringList getSettings(const QString &path) const;
+    Q_INVOKABLE QStringList getSettings(const QString& path) const;
 
-public:
-    explicit GlobalSettings(QObject *parent = nullptr)
-        : QObject(parent),
-          m_language("en"),
-          m_windowSize(800, 600),
-          m_theme("light"),
+  public:
+    explicit GlobalSettings(QObject* parent = nullptr)
+        : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light"),
           m_ab_theme("default") {}
 
-    [[nodiscard]] int getWindowWidth() const { return m_windowSize.width(); }
-    [[nodiscard]] int getWindowHeight() const { return m_windowSize.height(); }
-    [[nodiscard]] QString getTheme() const { return m_theme; }
-    [[nodiscard]] QString getLanguage() const { return m_language; }
-    [[nodiscard]] QString getActivityBarTheme() const { return m_ab_theme; }
+    [[nodiscard]] int getWindowWidth() const {
+        return m_windowSize.width();
+    }
+    [[nodiscard]] int getWindowHeight() const {
+        return m_windowSize.height();
+    }
+    [[nodiscard]] QString getTheme() const {
+        return m_theme;
+    }
+    [[nodiscard]] QString getLanguage() const {
+        return m_language;
+    }
+    [[nodiscard]] QString getActivityBarTheme() const {
+        return m_ab_theme;
+    }
+    [[nodiscard]] bool getIsAnyItemCreatedAfterOpening() const {
+        return m_isAnyItemCreatedAfterOpening;
+    }
 
-    enum class WorkspaceResult {
+    enum class WorkspaceResult : std::int8_t {
         Success = 0,
         FailedToCreateDirectory = -1,
         AlreadyExists = -2,
@@ -79,19 +100,17 @@ public:
         WorkSpaceNotFound = -7,
     };
 
-    void initialize(QQmlEngine *engine) {
+    void initialize(QQmlEngine* engine) {
         m_engine = engine;
         loadTranslation(m_language);
     }
 
     Q_INVOKABLE QStringList getWorkspaces() const;
-    Q_INVOKABLE int deleteWorkspace(const QString &name) const;
-    Q_INVOKABLE int openWorkspace(const QString &path) const;
+    Q_INVOKABLE int deleteWorkspace(const QString& name) const;
+    Q_INVOKABLE int openWorkspace(const QString& path) const;
 
-    Q_INVOKABLE void setTheme(const QString &newTheme)
-    {
-        if (m_theme != newTheme)
-        {
+    Q_INVOKABLE void setTheme(const QString& newTheme) {
+        if (m_theme != newTheme) {
             m_theme = newTheme;
 
             if (newTheme == "dark") {
@@ -119,10 +138,8 @@ public:
         }
     }
 
-    Q_INVOKABLE void setLanguage(const QString &newLanguage)
-    {
-        if (m_language != newLanguage)
-        {
+    Q_INVOKABLE void setLanguage(const QString& newLanguage) {
+        if (m_language != newLanguage) {
             m_language = newLanguage;
 
             loadTranslation(m_language);
@@ -142,12 +159,10 @@ public:
         }
     }
 
-    int createWorkspace(const QStringList &items) const;
+    int createWorkspace(const QStringList& items) const;
 
-    Q_INVOKABLE void setActivityBarTheme(const QString &newTheme)
-    {
-        if (m_ab_theme != newTheme)
-        {
+    Q_INVOKABLE void setActivityBarTheme(const QString& newTheme) {
+        if (m_ab_theme != newTheme) {
             m_ab_theme = newTheme;
 
             if (!m_loading) {
@@ -166,48 +181,68 @@ public:
     }
 
     Q_INVOKABLE void setWindowWidth(const int width) {
-        if (m_windowSize.width() == width) return;
+        if (m_windowSize.width() == width)
+            return;
         m_windowSize.setWidth(width);
         if (!m_loading) {
-			const QString filePath = this->getFilePath();
-			QFile saveFile(filePath);
+            const QString filePath = this->getFilePath();
+            QFile saveFile(filePath);
             if (!saveFile.open(QIODevice::WriteOnly)) {
-				qWarning() << "Couldn't open settings file for writing:" << filePath;
+                qWarning() << "Couldn't open settings file for writing:" << filePath;
             } else {
                 saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-				saveFile.close();
+                saveFile.close();
             }
         }
-		emit windowSizeChanged();
+        emit windowSizeChanged();
     }
 
     Q_INVOKABLE void setWindowHeight(const int height) {
-	    if (m_windowSize.height() == height) return;
+        if (m_windowSize.height() == height)
+            return;
         m_windowSize.setHeight(height);
         if (!m_loading) {
             const QString filePath = this->getFilePath();
-			QFile saveFile(filePath);
+            QFile saveFile(filePath);
             if (!saveFile.open(QIODevice::WriteOnly)) {
-				qWarning() << "Couldn't open settings file for writing:" << filePath;
+                qWarning() << "Couldn't open settings file for writing:" << filePath;
             } else {
                 saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-				saveFile.close();
+                saveFile.close();
             }
         }
-		emit windowSizeChanged();
+        emit windowSizeChanged();
     }
 
-signals:
+    Q_INVOKABLE void setIsAnyItemCreatedAfterOpening(const bool value) {
+        if (!m_loading) {
+            m_isAnyItemCreatedAfterOpening = value;
+            QString filePath = this->getFilePath();
+            QFile saveFile(filePath);
+            if (saveFile.open(QIODevice::WriteOnly)) {
+                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                saveFile.close();
+            } else {
+                qWarning() << "Couldn't open settings file for writing:" << filePath;
+            }
+        }
+
+        emit isAnyItemCreatedAfterOpeningChanged();
+    }
+
+  signals:
     void windowSizeChanged();
+    void isAnyItemCreatedAfterOpeningChanged();
     void themeChanged();
     void languageChanged();
-    void workspaceCreated(const QString &userName, const QString &name, const QString &path, int result);
+    void workspaceCreated(const QString& userName, const QString& name, const QString& path,
+                          int result);
     void activityBarThemeChanged();
 
-public:
+  public:
     inline static const QString SETTINGS_DIR_NAME = "ManageMySelf";
 
-private:
+  private:
     struct FieldDesc {
         const char* key;
         int typeId;
@@ -216,19 +251,39 @@ private:
         QVariant (*def)();
     };
 
-    static QVariant getLanguageVar(const GlobalSettings& s) { return s.m_language; }
-    static void setLanguageVar(GlobalSettings& s, const QVariant& v) { s.setLanguage(v.toString()); }
-    static QVariant defLanguage() { return QVariant(QStringLiteral("en")); }
+    static QVariant getLanguageVar(const GlobalSettings& s) {
+        return s.m_language;
+    }
+    static void setLanguageVar(GlobalSettings& s, const QVariant& v) {
+        s.setLanguage(v.toString());
+    }
+    static QVariant defLanguage() {
+        return QVariant(QStringLiteral("en"));
+    }
 
-    static QVariant getThemeVar(const GlobalSettings& s) { return s.m_theme; }
-    static void setThemeVar(GlobalSettings& s, const QVariant& v) { s.setTheme(v.toString()); }
-    static QVariant defTheme() { return QVariant(QStringLiteral("light")); }
+    static QVariant getThemeVar(const GlobalSettings& s) {
+        return s.m_theme;
+    }
+    static void setThemeVar(GlobalSettings& s, const QVariant& v) {
+        s.setTheme(v.toString());
+    }
+    static QVariant defTheme() {
+        return QVariant(QStringLiteral("light"));
+    }
 
-    static QVariant getActivityBarThemeVar(const GlobalSettings& s) { return s.m_ab_theme; }
-    static void setActivityBarThemeVar(GlobalSettings& s, const QVariant& v) { s.m_ab_theme = v.toString(); }
-    static QVariant defActivityBarTheme() { return QVariant(QStringLiteral("default")); }
+    static QVariant getActivityBarThemeVar(const GlobalSettings& s) {
+        return s.m_ab_theme;
+    }
+    static void setActivityBarThemeVar(GlobalSettings& s, const QVariant& v) {
+        s.m_ab_theme = v.toString();
+    }
+    static QVariant defActivityBarTheme() {
+        return QVariant(QStringLiteral("default"));
+    }
 
-    static QVariant getWindowSizeVar(const GlobalSettings& s) { return QVariant::fromValue(s.m_windowSize); }
+    static QVariant getWindowSizeVar(const GlobalSettings& s) {
+        return QVariant::fromValue(s.m_windowSize);
+    }
     static void setWindowSizeVar(GlobalSettings& s, const QVariant& v) {
         const QSize size = v.canConvert<QSize>() ? v.toSize() : QSize(800, 600);
         if (size != s.m_windowSize) {
@@ -236,14 +291,32 @@ private:
             emit s.windowSizeChanged();
         }
     }
-    static QVariant defWindowSize() { return QVariant::fromValue(QSize(800, 600)); }
+    static QVariant defWindowSize() {
+        return QVariant::fromValue(QSize(800, 600));
+    }
 
     static const std::array<FieldDesc, 4>& fields() {
         static const std::array<FieldDesc, 4> k = {{
-            { "language",          QMetaType::QString, getLanguageVar,        setLanguageVar,        defLanguage },
-            { "windowSize",        QMetaType::QSize,   getWindowSizeVar,      setWindowSizeVar,      defWindowSize },
-            { "theme",             QMetaType::QString, getThemeVar,           setThemeVar,           defTheme },
-            { "activityBarTheme",  QMetaType::QString, getActivityBarThemeVar,setActivityBarThemeVar,defActivityBarTheme },
+            {.key = "language",
+             .typeId = QMetaType::QString,
+             .get = getLanguageVar,
+             .set = setLanguageVar,
+             .def = defLanguage},
+            {.key = "windowSize",
+             .typeId = QMetaType::QSize,
+             .get = getWindowSizeVar,
+             .set = setWindowSizeVar,
+             .def = defWindowSize},
+            {.key = "theme",
+             .typeId = QMetaType::QString,
+             .get = getThemeVar,
+             .set = setThemeVar,
+             .def = defTheme},
+            {.key = "activityBarTheme",
+             .typeId = QMetaType::QString,
+             .get = getActivityBarThemeVar,
+             .set = setActivityBarThemeVar,
+             .def = defActivityBarTheme},
         }};
         return k;
     }
@@ -262,13 +335,13 @@ private:
     static QVariant jsonToVariant(const QJsonValue& jv, int typeId) {
         if (typeId == QMetaType::QSize) {
             const auto o = jv.toObject();
-            return QVariant::fromValue(QSize(o.value("width").toInt(800),
-                                             o.value("height").toInt(600)));
+            return QVariant::fromValue(
+                QSize(o.value("width").toInt(800), o.value("height").toInt(600)));
         }
         return jv.toVariant();
     }
 
-public:
+  public:
     [[nodiscard]] QJsonObject toJson() const override {
         QJsonObject json;
         for (const auto& f : fields()) {
@@ -316,7 +389,7 @@ public:
     }
 
     // This Function has side effects
-    void loadFromJson(const QJsonObject &json) override {
+    void loadFromJson(const QJsonObject& json) override {
         QJsonObject mutableJson = json;
         bool wasModified = false;
 
@@ -349,16 +422,17 @@ public:
 
     [[nodiscard]] QString getFilePath() const override;
 
-private:
+  private:
     QString m_language;
     QSize m_windowSize;
     QString m_theme;
-    QTranslator *m_translator = nullptr;
-    QQmlEngine *m_engine = nullptr;
+    QTranslator* m_translator = nullptr;
+    QQmlEngine* m_engine = nullptr;
     QString m_ab_theme;
     bool m_loading = false;
+    bool m_isAnyItemCreatedAfterOpening = false;
 
-    void loadTranslation(const QString &language) {
+    void loadTranslation(const QString& language) {
         if (m_translator) {
             QCoreApplication::removeTranslator(m_translator);
             delete m_translator;
