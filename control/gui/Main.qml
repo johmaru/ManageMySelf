@@ -25,7 +25,7 @@ ApplicationWindow {
                               ? initialWorkspacePath : ""
 
     property int initScope: initialScope
-    property int initFillter: initialFilter
+    property int initFilter: initialFilter
 
     property string initTo: (typeof initialTo !== "undefined" && typeof initialTo === "string" && initialTo.length > 0)
                             ? initialTo : ""
