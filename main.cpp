@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     const QString FILE_PATH = settings->getFilePath();
 
-    if (!FILE_PATH.isEmpty() || settings->loadFromFile(FILE_PATH)) {
+    if (!FILE_PATH.isEmpty() && settings->loadFromFile(FILE_PATH)) {
         if (settings->migrationJson(FILE_PATH) != 0) {
             qWarning() << "Failed to migrate settings file:" << FILE_PATH;
         }
