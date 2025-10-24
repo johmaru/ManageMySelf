@@ -426,8 +426,8 @@ ApplicationWindow {
                 }
             }
 
-            onRequestCreateNewWindowForGraph: function (path, Scope, Fillter, toStr, fromStr) {
-                settings.openGraphWindow(path, Scope, Fillter, toStr, fromStr);
+            onRequestCreateNewWindowForGraph: function (path, Scope, Filter, toStr, fromStr) {
+                settings.openGraphWindow(path, Scope, Filter, toStr, fromStr);
             }
 
             onRequestNavigateMarkdownEditor: function(contentPath) {
@@ -759,13 +759,13 @@ ApplicationWindow {
 
            workspace: root.initWorkspace
            scope: root.initScope
-           fillter: root.initFillter
+           filter: root.initFilter
            to: root.initTo
            from: root.initFrom
 
-           onRequestGraphData: function(workspace, scope, fillter, to, from) {
-               console.log("Requesting graph data for workspace:", workspace, "scope:", scope, "fillter:", fillter, "to:", to, "from:", from);
-               let graphData = settings.getGraphData(workspace, scope, fillter, to, from);
+           onRequestGraphData: function(workspace, scope, filter, to, from) {
+               console.log("Requesting graph data for workspace:", workspace, "scope:", scope, "filter:", filter, "to:", to, "from:", from);
+               let graphData = settings.getGraphData(workspace, scope, filter, to, from);
                if (graphData) {
                    graphViewer.graphData = graphData;
                    graphViewer.updateGraph();

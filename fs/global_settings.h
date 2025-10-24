@@ -60,7 +60,7 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
     Q_INVOKABLE [[nodiscard]] int writeMarkdownFile(const QString& filePath,
                                                     const QString& content) const;
     Q_INVOKABLE [[nodiscard]] QString search(const QString& query, const QString& scope,
-                                             bool casseSensitive, bool useRegex,
+                                             bool caseSensitive, bool useRegex,
                                              const QString& path) const;
     Q_INVOKABLE int openGraphWindow(const QString& workspacePath, int scope, int filter,
                                     const QString& toStr, const QString& fromStr);

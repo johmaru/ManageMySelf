@@ -433,7 +433,7 @@ int GlobalSettings::writeMarkdownFile(const QString& filePath, const QString& co
     return 0; // 成功
 }
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-QString GlobalSettings::search(const QString& query, const QString& scope, bool casseSensitive,
+QString GlobalSettings::search(const QString& query, const QString& scope, bool caseSensitive,
                                bool useRegex, const QString& path) const {
     if (query.isEmpty() || path.isEmpty()) {
         qWarning() << "Query and path cannot be empty";
@@ -447,7 +447,7 @@ QString GlobalSettings::search(const QString& query, const QString& scope, bool 
     }
 
     UserSql user_sql(user_db_path);
-    return user_sql.search(query, scope, casseSensitive, useRegex);
+    return user_sql.search(query, scope, caseSensitive, useRegex);
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static,bugprone-easily-swappable-parameters)

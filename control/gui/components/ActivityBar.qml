@@ -15,26 +15,13 @@ Pane {
     property string accentColor: "#00d146"
     signal activated(string key)
 
-    property string colorCode: ""
+     property string colorCode: ab_theme === "default"
+                              ? (theme === "light" ? "#c0c0c0" : "#9c202020")
+                              : ab_theme
+
 
     background: Rectangle {
-        color: root.theme === root.setThemeColor(root.ab_theme), root.colorCode
-        // same color -> color: root.Material.primaryColor
-    }
-
-    function setThemeColor(ab_theme) {
-        if (ab_theme === "default") {
-            switch (theme) {
-                case "light":
-                    root.colorCode = "#c0c0c0"
-                    break;
-                case "dark":
-                    root.colorCode = "#9c202020"
-                    break;
-            }
-        } else {
-            root.colorCode = ab_theme
-        }
+        color: root.colorCode
     }
 
     Loader {

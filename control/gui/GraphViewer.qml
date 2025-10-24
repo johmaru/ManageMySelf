@@ -13,7 +13,7 @@ Page {
     
     property string workspace: ""
     property int scope: 0 // 0=ALL, 1=Sleep/Wake
-    property int fillter: 0
+    property int filter: 0
     property string to: ""
     property string from: ""
 
@@ -28,11 +28,11 @@ Page {
 
     property var graphData: ({}) // { start, end, days:[ {date, diary_exists, status:{...}} ] }
 
-    signal requestGraphData(string workspace, int scope, int fillter, string to, string from)
+    signal requestGraphData(string workspace, int scope, int filter, string to, string from)
  
     Component.onCompleted: {
         console.log("GraphViewer.qml" + workspace)    
-        requestGraphData(workspace, scope, fillter, to, from);
+        requestGraphData(workspace, scope, filter, to, from);
     }
 
     onGraphDataChanged: {
@@ -41,7 +41,7 @@ Page {
     }
 
     onScopeChanged: {
-        requestGraphData(workspace, scope, fillter, to, from);
+        requestGraphData(workspace, scope, filter, to, from);
     }
 
     function toJsArray(list) {
