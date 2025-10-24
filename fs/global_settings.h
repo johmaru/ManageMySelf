@@ -20,7 +20,6 @@
 #include <QStringList>
 #include <QVariant>
 #include <array>
-#include <cstddef>
 #include <qcontainerfwd.h>
 #include <qcoreapplication.h>
 #include <qdebug.h>
@@ -45,26 +44,33 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
   public slots:
     Q_INVOKABLE int createWorkspaceFromQml(const QString& userName, const QString& name,
                                            const QString& path);
-    Q_INVOKABLE QStringList getWorkspaceWithName(const QString& name) const;
-    Q_INVOKABLE int createDiary(int year, int month, int day, const QString& title,
-                                const QString& path) const;
-    Q_INVOKABLE int createStatus(const QString& path) const;
-    Q_INVOKABLE int editStatus(int year, int month, int day, const QString& jsonString,
-                               const QString& path) const;
-    Q_INVOKABLE QString getMonthUserDiarySqlData(int year, int month, const QString& path) const;
-    Q_INVOKABLE QString getMonthUserStatusData(int year, int month, const QString& path) const;
-    Q_INVOKABLE QString loadMarkdownFile(const QString& filePath) const;
-    Q_INVOKABLE int writeMarkdownFile(const QString& filePath, const QString& content) const;
-    Q_INVOKABLE QString search(const QString& query, const QString& scope, bool casseSensitive,
-                               bool useRegex, const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QStringList getWorkspaceWithName(const QString& name) const;
+    Q_INVOKABLE [[nodiscard]] QUrl createDiary(int year, int month, int day, const QString& title,
+                                               const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] int createStatus(const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] int editStatus(int year, int month, int day,
+                                             const QString& jsonString, const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QString getMonthUserDiarySqlData(int year, int month,
+                                                               const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QString getMonthUserStatusData(int year, int month,
+                                                             const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QString getSelectedUserStatusDataJson(int year, int month, int day,
+                                                                    const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QString loadMarkdownFile(const QString& filePath) const;
+    Q_INVOKABLE [[nodiscard]] int writeMarkdownFile(const QString& filePath,
+                                                    const QString& content) const;
+    Q_INVOKABLE [[nodiscard]] QString search(const QString& query, const QString& scope,
+                                             bool casseSensitive, bool useRegex,
+                                             const QString& path) const;
     Q_INVOKABLE int openGraphWindow(const QString& workspacePath, int scope, int filter,
                                     const QString& toStr, const QString& fromStr);
     [[nodiscard]] Q_INVOKABLE QVariant getGraphData(const QString& workspacePath, int scope,
                                                     int filter, const QString& toStr,
                                                     const QString& fromStr) const;
 
-    Q_INVOKABLE QStringList getSettings(const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QStringList getSettings(const QString& path) const;
 
+    // NOLINTNEXTLINE(readability-redundant-access-specifiers)
   public:
     explicit GlobalSettings(QObject* parent = nullptr)
         : QObject(parent), m_language("en"), m_windowSize(800, 600), m_theme("light"),
@@ -90,14 +96,14 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
     }
 
     enum class WorkspaceResult : std::int8_t {
-        Success = 0,
-        FailedToCreateDirectory = -1,
-        AlreadyExists = -2,
-        ErrorCheckingExistence = -3,
-        WorkspaceNameCannotBeEmpty = -4,
-        InsufficientArguments = -5,
-        WorkspaceDoesNotExist = -6,
-        WorkSpaceNotFound = -7,
+        SUCCESS = 0,
+        FAILED_TO_CREATE_DIRECTORY = -1,
+        ALREADY_EXISTS = -2,
+        ERROR_CHECKING_EXISTENCE = -3,
+        WORKSPACE_NAME_CANNOT_BE_EMPTY = -4,
+        INSUFFICIENT_ARGUMENTS = -5,
+        WORKSPACE_DOES_NOT_EXIST = -6,
+        WORK_SPACE_NOT_FOUND = -7,
     };
 
     void initialize(QQmlEngine* engine) {
@@ -105,9 +111,9 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
         loadTranslation(m_language);
     }
 
-    Q_INVOKABLE QStringList getWorkspaces() const;
-    Q_INVOKABLE int deleteWorkspace(const QString& name) const;
-    Q_INVOKABLE int openWorkspace(const QString& path) const;
+    Q_INVOKABLE [[nodiscard]] QStringList getWorkspaces() const;
+    Q_INVOKABLE [[nodiscard]] int deleteWorkspace(const QString& name) const;
+    Q_INVOKABLE [[nodiscard]] int openWorkspace(const QString& path) const;
 
     Q_INVOKABLE void setTheme(const QString& newTheme) {
         if (m_theme != newTheme) {
@@ -119,19 +125,19 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
                 qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", "Light");
             }
 
-            if (m_engine) {
+            if (m_engine != nullptr) {
                 m_engine->clearComponentCache();
             }
 
             if (!m_loading) {
-                QString filePath = this->getFilePath();
-                QFile saveFile(filePath);
-                if (!saveFile.open(QIODevice::WriteOnly)) {
-                    qWarning() << "Couldn't open settings file for writing:" << filePath;
+                QString file_path = this->getFilePath();
+                QFile save_file(file_path);
+                if (!save_file.open(QIODevice::WriteOnly)) {
+                    qWarning() << "Couldn't open settings file for writing:" << file_path;
                     return;
                 }
-                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                saveFile.close();
+                save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                save_file.close();
             }
 
             emit themeChanged();
@@ -145,13 +151,13 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
             loadTranslation(m_language);
 
             if (!m_loading) {
-                QString filePath = this->getFilePath();
-                QFile saveFile(filePath);
-                if (saveFile.open(QIODevice::WriteOnly)) {
-                    saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                    saveFile.close();
+                QString file_path = this->getFilePath();
+                QFile save_file(file_path);
+                if (save_file.open(QIODevice::WriteOnly)) {
+                    save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                    save_file.close();
                 } else {
-                    qWarning() << "Couldn't open settings file for writing:" << filePath;
+                    qWarning() << "Couldn't open settings file for writing:" << file_path;
                 }
             }
 
@@ -166,64 +172,66 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
             m_ab_theme = newTheme;
 
             if (!m_loading) {
-                QString filePath = this->getFilePath();
-                QFile saveFile(filePath);
-                if (!saveFile.open(QIODevice::WriteOnly)) {
-                    qWarning() << "Couldn't open settings file for writing:" << filePath;
+                QString file_path = this->getFilePath();
+                QFile save_file(file_path);
+                if (!save_file.open(QIODevice::WriteOnly)) {
+                    qWarning() << "Couldn't open settings file for writing:" << file_path;
                     return;
                 }
-                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                saveFile.close();
+                save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                save_file.close();
             }
 
             emit activityBarThemeChanged();
         }
     }
 
-    Q_INVOKABLE void setWindowWidth(const int width) {
-        if (m_windowSize.width() == width)
+    Q_INVOKABLE void setWindowWidth(const int WIDTH) {
+        if (m_windowSize.width() == WIDTH) {
             return;
-        m_windowSize.setWidth(width);
+        }
+        m_windowSize.setWidth(WIDTH);
         if (!m_loading) {
-            const QString filePath = this->getFilePath();
-            QFile saveFile(filePath);
-            if (!saveFile.open(QIODevice::WriteOnly)) {
-                qWarning() << "Couldn't open settings file for writing:" << filePath;
+            const QString FILE_PATH = this->getFilePath();
+            QFile save_file(FILE_PATH);
+            if (!save_file.open(QIODevice::WriteOnly)) {
+                qWarning() << "Couldn't open settings file for writing:" << FILE_PATH;
             } else {
-                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                saveFile.close();
+                save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                save_file.close();
             }
         }
         emit windowSizeChanged();
     }
 
-    Q_INVOKABLE void setWindowHeight(const int height) {
-        if (m_windowSize.height() == height)
+    Q_INVOKABLE void setWindowHeight(const int HEIGHT) {
+        if (m_windowSize.height() == HEIGHT) {
             return;
-        m_windowSize.setHeight(height);
+        }
+        m_windowSize.setHeight(HEIGHT);
         if (!m_loading) {
-            const QString filePath = this->getFilePath();
-            QFile saveFile(filePath);
-            if (!saveFile.open(QIODevice::WriteOnly)) {
-                qWarning() << "Couldn't open settings file for writing:" << filePath;
+            const QString FILE_PATH = this->getFilePath();
+            QFile save_file(FILE_PATH);
+            if (!save_file.open(QIODevice::WriteOnly)) {
+                qWarning() << "Couldn't open settings file for writing:" << FILE_PATH;
             } else {
-                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                saveFile.close();
+                save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                save_file.close();
             }
         }
         emit windowSizeChanged();
     }
 
-    Q_INVOKABLE void setIsAnyItemCreatedAfterOpening(const bool value) {
+    Q_INVOKABLE void setIsAnyItemCreatedAfterOpening(const bool VALUE) {
         if (!m_loading) {
-            m_isAnyItemCreatedAfterOpening = value;
-            QString filePath = this->getFilePath();
-            QFile saveFile(filePath);
-            if (saveFile.open(QIODevice::WriteOnly)) {
-                saveFile.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
-                saveFile.close();
+            m_isAnyItemCreatedAfterOpening = VALUE;
+            QString file_path = this->getFilePath();
+            QFile save_file(file_path);
+            if (save_file.open(QIODevice::WriteOnly)) {
+                save_file.write(QJsonDocument(this->toJson()).toJson(QJsonDocument::Indented));
+                save_file.close();
             } else {
-                qWarning() << "Couldn't open settings file for writing:" << filePath;
+                qWarning() << "Couldn't open settings file for writing:" << file_path;
             }
         }
 
@@ -251,52 +259,65 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
         QVariant (*def)();
     };
 
-    static QVariant getLanguageVar(const GlobalSettings& s) {
-        return s.m_language;
+    static QVariant getLanguageVar(const GlobalSettings& settings) {
+        return settings.m_language;
     }
-    static void setLanguageVar(GlobalSettings& s, const QVariant& v) {
-        s.setLanguage(v.toString());
+    static void setLanguageVar(GlobalSettings& settings, const QVariant& variant) {
+        settings.setLanguage(variant.toString());
     }
     static QVariant defLanguage() {
-        return QVariant(QStringLiteral("en"));
+        return QVariant{QStringLiteral("en")};
     }
 
-    static QVariant getThemeVar(const GlobalSettings& s) {
-        return s.m_theme;
+    static QVariant getThemeVar(const GlobalSettings& settings) {
+        return settings.m_theme;
     }
-    static void setThemeVar(GlobalSettings& s, const QVariant& v) {
-        s.setTheme(v.toString());
+    static void setThemeVar(GlobalSettings& settings, const QVariant& variant) {
+        settings.setTheme(variant.toString());
     }
     static QVariant defTheme() {
-        return QVariant(QStringLiteral("light"));
+        return QVariant{QStringLiteral("light")};
     }
 
-    static QVariant getActivityBarThemeVar(const GlobalSettings& s) {
-        return s.m_ab_theme;
+    static QVariant getActivityBarThemeVar(const GlobalSettings& settings) {
+        return settings.m_ab_theme;
     }
-    static void setActivityBarThemeVar(GlobalSettings& s, const QVariant& v) {
-        s.m_ab_theme = v.toString();
+    static void setActivityBarThemeVar(GlobalSettings& settings, const QVariant& variant) {
+        settings.m_ab_theme = variant.toString();
     }
     static QVariant defActivityBarTheme() {
-        return QVariant(QStringLiteral("default"));
+        return QVariant{QStringLiteral("default")};
     }
 
-    static QVariant getWindowSizeVar(const GlobalSettings& s) {
-        return QVariant::fromValue(s.m_windowSize);
+    static QVariant getWindowSizeVar(const GlobalSettings& settings) {
+        return QVariant::fromValue(settings.m_windowSize);
     }
-    static void setWindowSizeVar(GlobalSettings& s, const QVariant& v) {
-        const QSize size = v.canConvert<QSize>() ? v.toSize() : QSize(800, 600);
-        if (size != s.m_windowSize) {
-            s.m_windowSize = size;
-            emit s.windowSizeChanged();
+    static void setWindowSizeVar(GlobalSettings& settings, const QVariant& variant) {
+        const QSize SIZE = variant.canConvert<QSize>() ? variant.toSize() : QSize(800, 600);
+        if (SIZE != settings.m_windowSize) {
+            settings.m_windowSize = SIZE;
+            emit settings.windowSizeChanged();
         }
     }
     static QVariant defWindowSize() {
         return QVariant::fromValue(QSize(800, 600));
     }
 
-    static const std::array<FieldDesc, 4>& fields() {
-        static const std::array<FieldDesc, 4> k = {{
+    static QVariant getIsAnyItemCreatedAfterOpeningVar(const GlobalSettings& settings) {
+        return {settings.m_isAnyItemCreatedAfterOpening};
+    }
+
+    static void setIsAnyItemCreatedAfterOpeningVar(GlobalSettings& settings,
+                                                   const QVariant& variant) {
+        settings.m_isAnyItemCreatedAfterOpening = variant.toBool();
+    }
+
+    static QVariant defIsAnyItemCreatedAfterOpening() {
+        return {true};
+    }
+
+    static const std::array<FieldDesc, 5>& fields() {
+        static const std::array<FieldDesc, 5> KEYS = {{
             {.key = "language",
              .typeId = QMetaType::QString,
              .get = getLanguageVar,
@@ -317,72 +338,77 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
              .get = getActivityBarThemeVar,
              .set = setActivityBarThemeVar,
              .def = defActivityBarTheme},
+            {.key = "isAnyItemCreatedAfterOpening",
+             .typeId = QMetaType::Bool,
+             .get = getIsAnyItemCreatedAfterOpeningVar,
+             .set = setIsAnyItemCreatedAfterOpeningVar,
+             .def = defIsAnyItemCreatedAfterOpening},
         }};
-        return k;
+        return KEYS;
     }
 
-    static QJsonValue variantToJson(const QVariant& v) {
-        if (v.metaType().id() == QMetaType::QSize) {
-            const QSize sz = v.toSize();
-            QJsonObject o;
-            o["width"] = sz.width();
-            o["height"] = sz.height();
-            return o;
+    static QJsonValue variantToJson(const QVariant& variant) {
+        if (variant.metaType().id() == QMetaType::QSize) {
+            const QSize SIZE = variant.toSize();
+            QJsonObject obj;
+            obj["width"] = SIZE.width();
+            obj["height"] = SIZE.height();
+            return obj;
         }
-        return QJsonValue::fromVariant(v);
+        return QJsonValue::fromVariant(variant);
     }
 
-    static QVariant jsonToVariant(const QJsonValue& jv, int typeId) {
+    static QVariant jsonToVariant(const QJsonValue& jvalue, int typeId) {
         if (typeId == QMetaType::QSize) {
-            const auto o = jv.toObject();
+            const auto OBJ = jvalue.toObject();
             return QVariant::fromValue(
-                QSize(o.value("width").toInt(800), o.value("height").toInt(600)));
+                QSize(OBJ.value("width").toInt(800), OBJ.value("height").toInt(600)));
         }
-        return jv.toVariant();
+        return jvalue.toVariant();
     }
 
   public:
     [[nodiscard]] QJsonObject toJson() const override {
         QJsonObject json;
-        for (const auto& f : fields()) {
-            json.insert(QString::fromUtf8(f.key), variantToJson(f.get(*this)));
+        for (const auto& fidesc : fields()) {
+            json.insert(QString::fromUtf8(fidesc.key), variantToJson(fidesc.get(*this)));
         }
         return json;
     }
 
-    int migrationJson(const QString filepath) override {
-        QFile file(filepath);
+    int migrationJson(const QString FILEPATH) override {
+        QFile file(FILEPATH);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "Couldn't open settings file for migration:" << filepath;
+            qWarning() << "Couldn't open settings file for migration:" << FILEPATH;
             return -1;
         }
 
-        const QByteArray saveData = file.readAll();
+        const QByteArray SAVE_DATA = file.readAll();
         file.close();
-        QJsonDocument loadDoc = QJsonDocument::fromJson(saveData);
-        if (loadDoc.isNull() || !loadDoc.isObject()) {
-            qWarning() << "Couldn't parse settings file for migration:" << filepath;
+        QJsonDocument load_doc = QJsonDocument::fromJson(SAVE_DATA);
+        if (load_doc.isNull() || !load_doc.isObject()) {
+            qWarning() << "Couldn't parse settings file for migration:" << FILEPATH;
             return -2;
         }
 
-        QJsonObject json = loadDoc.object();
+        QJsonObject json = load_doc.object();
         bool modified = false;
 
-        for (const auto& f : fields()) {
-            if (!json.contains(f.key)) {
-                json.insert(QString::fromUtf8(f.key), variantToJson(f.def()));
+        for (const auto& fidesc : fields()) {
+            if (!json.contains(fidesc.key)) {
+                json.insert(QString::fromUtf8(fidesc.key), variantToJson(fidesc.def()));
                 modified = true;
             }
         }
 
         if (modified) {
-            QFile saveFile(filepath);
-            if (!saveFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                qWarning() << "Couldn't open settings file to write migration:" << filepath;
+            QFile save_file(FILEPATH);
+            if (!save_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                qWarning() << "Couldn't open settings file to write migration:" << FILEPATH;
                 return -3;
             }
-            saveFile.write(QJsonDocument(json).toJson(QJsonDocument::Indented));
-            saveFile.close();
+            save_file.write(QJsonDocument(json).toJson(QJsonDocument::Indented));
+            save_file.close();
         }
 
         return 0;
@@ -390,30 +416,30 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
 
     // This Function has side effects
     void loadFromJson(const QJsonObject& json) override {
-        QJsonObject mutableJson = json;
-        bool wasModified = false;
+        QJsonObject mutable_json = json;
+        bool was_modified = false;
 
-        for (const auto& f : fields()) {
-            if (!mutableJson.contains(f.key)) {
-                mutableJson.insert(QString::fromUtf8(f.key), variantToJson(f.def()));
-                wasModified = true;
+        for (const auto& fidesc : fields()) {
+            if (!mutable_json.contains(fidesc.key)) {
+                mutable_json.insert(QString::fromUtf8(fidesc.key), variantToJson(fidesc.def()));
+                was_modified = true;
             }
         }
 
         m_loading = true;
-        for (const auto& f : fields()) {
-            const QJsonValue jv = mutableJson.value(f.key);
-            const QVariant v = jsonToVariant(jv, f.typeId);
-            f.set(*this, v);
+        for (const auto& fidesc : fields()) {
+            const QJsonValue JVALUE = mutable_json.value(fidesc.key);
+            const QVariant VARIANT = jsonToVariant(JVALUE, fidesc.typeId);
+            fidesc.set(*this, VARIANT);
         }
         m_loading = false;
 
-        if (wasModified) {
+        if (was_modified) {
             qInfo() << "Settings file was outdated or incomplete. Updating it now...";
-            QFile saveFile(this->getFilePath());
-            if (saveFile.open(QIODevice::WriteOnly)) {
-                saveFile.write(QJsonDocument(mutableJson).toJson(QJsonDocument::Indented));
-                saveFile.close();
+            QFile save_file(this->getFilePath());
+            if (save_file.open(QIODevice::WriteOnly)) {
+                save_file.write(QJsonDocument(mutable_json).toJson(QJsonDocument::Indented));
+                save_file.close();
             } else {
                 qWarning() << "Could not update settings file:" << this->getFilePath();
             }
@@ -426,7 +452,7 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
     QString m_language;
     QSize m_windowSize;
     QString m_theme;
-    QTranslator* m_translator = nullptr;
+    std::unique_ptr<QTranslator> m_translator;
     QQmlEngine* m_engine = nullptr;
     QString m_ab_theme;
     bool m_loading = false;
@@ -434,28 +460,27 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
 
     void loadTranslation(const QString& language) {
         if (m_translator) {
-            QCoreApplication::removeTranslator(m_translator);
-            delete m_translator;
-            m_translator = nullptr;
+            QCoreApplication::removeTranslator(m_translator.get());
+            m_translator.reset();
         }
 
-        m_translator = new QTranslator(this);
-        QString translationFile = QString(":/i18n/ManageMySelf_%1.qm").arg(language);
+        m_translator = std::make_unique<QTranslator>(this);
+        QString translation_file = QString(":/i18n/ManageMySelf_%1.qm").arg(language);
 
-        if (QFile::exists(translationFile)) {
-            if (m_translator->load(translationFile)) {
-                QCoreApplication::installTranslator(m_translator);
-                qDebug() << "Loaded translation file:" << translationFile;
+        if (QFile::exists(translation_file)) {
+            if (m_translator->load(translation_file)) {
+                QCoreApplication::installTranslator(m_translator.get());
+                qDebug() << "Loaded translation file:" << translation_file;
 
-                if (m_engine) {
+                if (m_engine != nullptr) {
                     m_engine->retranslate();
                 }
 
             } else {
-                qDebug() << "Failed to load translation file:" << translationFile;
+                qDebug() << "Failed to load translation file:" << translation_file;
             }
         } else {
-            qDebug() << "Translation file does not exist:" << translationFile;
+            qDebug() << "Translation file does not exist:" << translation_file;
         }
     }
 };

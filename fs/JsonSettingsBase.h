@@ -9,6 +9,11 @@
 
 class JsonSettingsBase {
   public:
+    JsonSettingsBase() = default;
+    JsonSettingsBase(const JsonSettingsBase&) = default;
+    JsonSettingsBase(JsonSettingsBase&&) noexcept = default;
+    JsonSettingsBase& operator=(const JsonSettingsBase&) = default;
+    JsonSettingsBase& operator=(JsonSettingsBase&&) noexcept = default;
     virtual ~JsonSettingsBase() = default;
 
     virtual int migrationJson(QString filepath) = 0;

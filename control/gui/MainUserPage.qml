@@ -30,7 +30,7 @@ Page {
     signal requestGetUserName(string path)
     signal backRequested()
     signal requestCreateDiary(int year, int month,int day,string title, string path)
-    signal requestCreateStatus(string path)
+    signal requestCreateStatus(int year, int month, int day, string path)
     signal requestMonthUserDiarySqlData(int year, int month, string path)
     signal requestMonthUserStatusData(int year, int month, string path)
     signal updateMonthGridData(string jsonString)
@@ -1042,7 +1042,7 @@ Page {
                 }
                 var selectedDate = mainUserPage.currentYear + "-" + ("0" + mainUserPage.currentMonth).slice(-2) + "-" + ("0" + mg.currentDay).slice(-2)
                 if (selectedDate === today) {
-                    mainUserPage.requestCreateStatus(mainUserPage.workspacePath)
+                    mainUserPage.requestCreateStatus(mainUserPage.currentYear, mainUserPage.currentMonth, mg.currentDay, mainUserPage.workspacePath)
                 } else {
                     console.warn("Cannot create status for past days:", mg.currentDay)
                 }

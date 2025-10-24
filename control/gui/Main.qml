@@ -27,11 +27,10 @@ ApplicationWindow {
     property int initScope: initialScope
     property int initFillter: initialFilter
 
-    property string initTo: (typeof initialTo === "string" && initialTo.length > 0)
-                        ? initialTo: ""
-    
-    property string initFrom: (typeof initialFrom === 'string' && initialFrom.length > 0)
-                        ? initialFrom: ""
+    property string initTo: (typeof initialTo !== "undefined" && typeof initialTo === "string" && initialTo.length > 0)
+                            ? initialTo : ""
+    property string initFrom: (typeof initialFrom !== "undefined" && typeof initialFrom === "string" && initialFrom.length > 0)
+                              ? initialFrom : ""
 
     width: settings.windowWidth
     height: settings.windowHeight
@@ -245,8 +244,10 @@ ApplicationWindow {
                                 CheckBox {
                                     id: anyItemCreatedCheckBox
                                     checked: settings.isAnyItemCreatedAfterOpening
-                                    onCheckedChanged: {
-                                        settings.setIsAnyItemCreatedAfterOpening(checked);
+                                    onToggled: {
+                                        if (checked !== settings.isAnyItemCreatedAfterOpening) {
+                                            settings.setIsAnyItemCreatedAfterOpening(checked);
+                                        }
                                     }
                                 }
                             }
@@ -372,20 +373,32 @@ ApplicationWindow {
             }
             onRequestCreateDiary: function(year, month, day, title, path) {
                 let result = settings.createDiary(year, month, day, title, path);
-                if (result === 0) {
+                let urlStr = result && result.toString ? result.toString() : String(result);
+                if (urlStr && urlStr.length > 0) {
                     console.log("Diary created successfully");
                     mainUserPageInstance.reloadMonthData();
+                    if (settings.isAnyItemCreatedAfterOpening) {
+                        let contentPath = urlStr;
+                        if (Qt.platform.os === "windows" && contentPath.startsWith("file:///")) {
+                            contentPath = contentPath.substring(8);
+                        }
+                        mainUserPageInstance.requestNavigateMarkdownEditor(contentPath);
+                    }
                 } else {
                     errorLabel.text = qsTr("Failed to create diary");
                     errorDialog.open();
                 }
             }
 
-            onRequestCreateStatus: function(path) {
+            onRequestCreateStatus: function(year, month, day, path) {
                 let result = settings.createStatus(path);
                 if (result === 0) {
                     console.log("Status created successfully");
                     mainUserPageInstance.reloadMonthData();
+                    if (settings.isAnyItemCreatedAfterOpening) {
+                        const selectedJson = settings.getSelectedUserStatusDataJson(year, month, day, path);
+                        mainUserPageInstance.requestStatusEditor(year, month, day, selectedJson, path, 1);
+                    }
                 } else {
                     errorLabel.text = qsTr("Failed to create status");
                     errorDialog.open();

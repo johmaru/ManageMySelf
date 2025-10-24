@@ -1,8 +1,9 @@
 #pragma once
+#include <QString>
 #include <SQLiteCpp/Database.h>
 #include <functional>
 #include <vector>
-#include <QString>
+
 
 struct Migration {
     int version;
@@ -10,6 +11,8 @@ struct Migration {
     std::function<void(SQLite::Database&)> up;
 };
 
+// NOLINTNEXTLINE(readability-identifier-length)
 int getUserVersion(SQLite::Database& db);
+// NOLINTNEXTLINE(readability-identifier-length)
 void setUserVersion(SQLite::Database& db, int version);
 void runMigrations(const std::string& dbPath, const std::vector<Migration>& migrations);

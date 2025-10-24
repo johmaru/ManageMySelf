@@ -18,10 +18,10 @@ Page {
     property string from: ""
 
     property var chartConfigs: [
-        { title: "Sleep", accessor: "sleep_time", color: "#FF6B6B", type: "time", yRange: [0, 24] },
-        { title: "Wake", accessor: "wake_up_time", color: "#4ECDC4", type: "time", yRange: [0, 24] },
+        { title: "Sleep", accessor: "sleep_time", color: "#FF6B6B", type: "time", yRange: [0, 23] },
+        { title: "Wake", accessor: "wake_up_time", color: "#4ECDC4", type: "time", yRange: [0, 23] },
         { title: "Mood", accessor: "mood", color: "#1A535C", type: "number", yRange: [0, 5] },
-        { title: "Temp", accessor: "temperature", color: "#D0021B", type: "number", yRange: [34, 38] }
+        { title: "Temp", accessor: "temperature", color: "#D0021B", type: "number", yRange: [35, 45] }
     ]
 
     property var seriesRegistry: ({})
@@ -56,15 +56,14 @@ Page {
     }
 
     function parseTime(time) {
+        if (time === "" || time === null || time === undefined) return NaN
         var  num = Number(time)
         if (!isFinite(num)) return NaN;
         var hor = Math.floor(num)
         var min = Math.round((num - hor) * 100)
         if (min < 0) min = 0;
-        if (min > 59) min = 59;        
-
+        if (min > 59) min = 59;
         return hor + min/ 60
-
     }
 
     function clampRange1pt(minVal, maxVal, pad, minSpan) {
@@ -126,12 +125,15 @@ Page {
                     continue
 
                 var rawValue = day.status[key]
-                var value = (cfg && cfg.type === "time") ? parseTime(rawValue) : Number(rawValue)
+                if (typeof rawValue === "string")
+                    rawValue = rawValue.trim()
+                var value = (cfg && cfg.type === "time") ? parseTime(rawValue) : parseFloat(rawValue)
                 if (!isFinite(value))
+                    continue
+                if (cfg && cfg.yRange && (value < cfg.yRange[0] || value > cfg.yRange[1]))
                     continue
 
                 var timeStamp = new Date(day.date + "T00:00:00").getTime()
-                series.append(timeStamp, value)
                 points.push({ x: timeStamp, y: value })
             }
 
@@ -142,6 +144,8 @@ Page {
                 }
                 continue
             }
+
+            points.sort(function(a, b) { return a.x - b.x })
 
             var minX = points[0].x
             var maxX = points[0].x
@@ -163,7 +167,10 @@ Page {
                 axisX.max = new Date(maxX)
             }
 
-            if (cfg && cfg.type === "time") {
+            if (cfg && cfg.yRange && cfg.yRange.length === 2) {
+                axisY.min = cfg.yRange[0]
+                axisY.max = cfg.yRange[1]
+            } else if (cfg && cfg.type === "time") {
                 var swRange = clampRange1pt(Math.max(0, Math.floor(minY) - 1),
                                             Math.min(24, Math.ceil(maxY) + 1), 1, 2)
                 axisY.min = Math.max(0, swRange.min)
@@ -172,12 +179,13 @@ Page {
                 var moodRange = clampRange1pt(minY, maxY, 0.5, 1)
                 axisY.min = Math.floor(Math.min(0, moodRange.min))
                 axisY.max = Math.ceil(Math.max(5, moodRange.max))
-            } else if (key === "temperature") {
-                axisY.min = Math.floor(Math.min(34, minY - 0.3))
-                axisY.max = Math.ceil(Math.max(38, maxY + 0.3))
             } else {
                 axisY.min = Math.floor(minY)
                 axisY.max = Math.ceil(maxY)
+            }
+
+            for (var s = 0; s < points.length; ++s) {
+                series.append(points[s].x, points[s].y)
             }
         }
     }
