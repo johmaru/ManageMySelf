@@ -33,7 +33,7 @@ class GlobalSettings final : public QObject, public JsonSettingsBase {
     Q_OBJECT
 
     Q_PROPERTY(int windowWidth READ getWindowWidth WRITE setWindowWidth NOTIFY windowSizeChanged)
-    Q_PROPERTY(int windowHeight READ getWindowHeight WRITE setWindowWidth NOTIFY windowSizeChanged)
+    Q_PROPERTY(int windowHeight READ getWindowHeight WRITE setWindowHeight NOTIFY windowSizeChanged)
     Q_PROPERTY(QString theme READ getTheme WRITE setTheme NOTIFY themeChanged)
     Q_PROPERTY(QString language READ getLanguage WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QString activityBarTheme READ getActivityBarTheme WRITE setActivityBarTheme NOTIFY
