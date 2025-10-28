@@ -9,8 +9,8 @@ import ManageMySelf.GUI 1.0
 Page {
     id: statusEditorPage
 
-    signal backRequested()
-    signal requestEditStatus(int year, int month, int day, string statusJson,string path)
+    signal backRequested
+    signal requestEditStatus(int year, int month, int day, string statusJson, string path)
 
     property int year: 0
     property int month: 0
@@ -33,43 +33,52 @@ Page {
     property var activityBarTheme: "default" // "default", "#rrggbb"
 
     function toHourPointMinute(h, m) {
-        return Number(h + "." + String(m).padStart(2, '0'))
+        return Number(h + "." + String(m).padStart(2, '0'));
     }
 
     function toHourMinuteDoubleValue(HHmm) {
-        var n = Number(HHmm) || 0
-        var h = Math.floor(n)
-        var m = Math.round((n - h) * 100)
-        if (m >= 60) { h += Math.floor(m / 60); m = m % 60 }
-        if (m < 0) m = 0
-        if (m > 59) m = 59
-        return { hour: h, minute: m }
+        var n = Number(HHmm) || 0;
+        var h = Math.floor(n);
+        var m = Math.round((n - h) * 100);
+        if (m >= 60) {
+            h += Math.floor(m / 60);
+            m = m % 60;
+        }
+        if (m < 0)
+            m = 0;
+        if (m > 59)
+            m = 59;
+        return {
+            hour: h,
+            minute: m
+        };
     }
 
-    
     function handleActivityChange(key) {
         switch (key) {
-            case "toggle":
-                sidePanel.isSelected = !sidePanel.isSelected
-                break
-            case "save":
-                sidePanel.isSelected = false
-                var payload = JSON.stringify({
-                    mood: statusEditorPage.mood,
-                    free_mood_text: statusEditorPage.status.free_mood_text || "",
-                    sleep_time: statusEditorPage.toHourPointMinute(statusEditorPage.sleep_hour, statusEditorPage.sleep_minute),
-                    wake_up_time: statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute),
-                    temperature: Number(statusEditorPage.status.temperature || 0.0)
-                })
-                requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath)
-                break
-            case "settings":
-                if (sidePanel.isSelected) sidePanel.isSelected = false
-                            else sidePanel.isSelected = true
-                            break
-            case "home":
-                statusEditorPage.backRequested()
-                break
+        case "toggle":
+            sidePanel.isSelected = !sidePanel.isSelected;
+            break;
+        case "save":
+            sidePanel.isSelected = false;
+            var payload = JSON.stringify({
+                mood: statusEditorPage.mood,
+                free_mood_text: statusEditorPage.status.free_mood_text || "",
+                sleep_time: statusEditorPage.toHourPointMinute(statusEditorPage.sleep_hour, statusEditorPage.sleep_minute),
+                wake_up_time: statusEditorPage.toHourPointMinute(statusEditorPage.wake_hour, statusEditorPage.wake_minute),
+                temperature: Number(statusEditorPage.status.temperature || 0.0)
+            });
+            requestEditStatus(statusEditorPage.year, statusEditorPage.month, statusEditorPage.day, payload, statusEditorPage.workspacePath);
+            break;
+        case "settings":
+            if (sidePanel.isSelected)
+                sidePanel.isSelected = false;
+            else
+                sidePanel.isSelected = true;
+            break;
+        case "home":
+            statusEditorPage.backRequested();
+            break;
         }
     }
 
@@ -83,7 +92,7 @@ Page {
             temperature: 0.0,
             last_modified: "",
             created_at: ""
-        }
+        };
         mood = status.mood;
 
         var hm = statusEditorPage.toHourMinuteDoubleValue(status.sleep_time);
@@ -101,11 +110,15 @@ Page {
             function pick(keys, def) {
                 for (var i = 0; i < keys.length; i++) {
                     var v = o[keys[i]];
-                    if (v !== undefined && v !== null) return v;
+                    if (v !== undefined && v !== null)
+                        return v;
                 }
                 return def;
             }
-            var toNum = function(v) { var n = Number(v); return isNaN(n) ? 0 : n; };
+            var toNum = function (v) {
+                var n = Number(v);
+                return isNaN(n) ? 0 : n;
+            };
 
             return {
                 mood: toNum(pick(['mood'], 0)),
@@ -123,14 +136,21 @@ Page {
     }
 
     function getMoodText(mood) {
-        switch(mood) {
-            case 0: return qsTr("Very Bad");
-            case 1: return qsTr("Bad");
-            case 2: return qsTr("Neutral");
-            case 3: return qsTr("Good");
-            case 4: return qsTr("Very Good");
-            case 5: return qsTr("Excellent");
-            default: return qsTr("Unknown");
+        switch (mood) {
+        case 0:
+            return qsTr("Very Bad");
+        case 1:
+            return qsTr("Bad");
+        case 2:
+            return qsTr("Neutral");
+        case 3:
+            return qsTr("Good");
+        case 4:
+            return qsTr("Very Good");
+        case 5:
+            return qsTr("Excellent");
+        default:
+            return qsTr("Unknown");
         }
     }
 
@@ -177,7 +197,9 @@ Page {
             theme: statusEditorPage.themeSettings
             ab_theme: statusEditorPage.activityBarTheme
             // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
-            onActivated: function(key) { statusEditorPage.handleActivityChange(key) }
+            onActivated: function (key) {
+                statusEditorPage.handleActivityChange(key);
+            }
         }
 
         // サイドパネル
@@ -203,8 +225,12 @@ Page {
                 Column {
                     spacing: 8
                     padding: 8
-                    Label { text: qsTr("Settings") }
-                    Label { text: qsTr("Currently does not support this feature") }
+                    Label {
+                        text: qsTr("Settings")
+                    }
+                    Label {
+                        text: qsTr("Currently does not support this feature")
+                    }
                 }
             }
         }
@@ -253,10 +279,7 @@ Page {
                         padding: 0
                         topPadding: 0
                         bottomPadding: 0
-                        text: qsTr("Status for %1-%2-%3")
-                            .arg(statusEditorPage.year)
-                            .arg(statusEditorPage.month)
-                            .arg(statusEditorPage.day)
+                        text: qsTr("Status for %1-%2-%3").arg(statusEditorPage.year).arg(statusEditorPage.month).arg(statusEditorPage.day)
                         font.pixelSize: 20
                     }
 
@@ -264,108 +287,174 @@ Page {
                         width: parent.width
                         spacing: 8
 
-                        Label { text: qsTr("Mood") }
+                        Label {
+                            text: qsTr("Mood")
+                        }
 
                         Slider {
                             Layout.fillWidth: true
-                            from: 0; to: 5; stepSize: 1
+                            from: 0
+                            to: 5
+                            stepSize: 1
                             value: statusEditorPage.mood
                             enabled: false
                         }
 
-                        Label { text: getMoodText(statusEditorPage.mood) }
+                        Label {
+                            text: getMoodText(statusEditorPage.mood)
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Free Mood Text"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Free Mood Text")
+                        font.pixelSize: 20
+                    }
 
                     ScrollView {
-                            width: Math.min(600, parent.width)
-                            height: 240
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            
-                            TextArea {
-                                id: freeMoodTextArea
-                                wrapMode: TextArea.Wrap
-                                padding: 0
-                                text: statusEditorPage.status.free_mood_text
-                                readOnly: true
-                            }
+                        width: Math.min(600, parent.width)
+                        height: 240
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                        TextArea {
+                            id: freeMoodTextArea
+                            wrapMode: TextArea.Wrap
+                            padding: 0
+                            text: statusEditorPage.status.free_mood_text
+                            readOnly: true
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Sleep Time"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Sleep Time")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Hour") }
+                        Label {
+                            text: qsTr("Hour")
+                        }
                         SpinBox {
                             id: sleep_hh
-                            from: 0; to: 23; stepSize: 1
+                            from: 0
+                            to: 23
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            enabled : false
+                            enabled: false
+                            editable: true
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator {
+                                bottom: 0
+                                top: 23
+                            }
+                            textFromValue: function (v, locale) {
+                                return String(v).padStart(2, '0');
+                            }
+                            valueFromText: function (text, locale) {
+                                var n = parseInt(text);
+                                if (isNaN(n))
+                                    return from;
+                                return Math.max(from, Math.min(23, n));
+                            }
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).hour || 0
+                            onValueChanged: statusEditorPage.sleep_hour = value
                         }
-                        Label { text: qsTr("Minute") }
-                        Label { text: ":" }
+                        Label {
+                            text: qsTr("Minute")
+                        }
+                        Label {
+                            text: ":"
+                        }
                         SpinBox {
                             id: sleep_mm
-                            from: 0; to: 59; stepSize: 1
+                            from: 0
+                            to: 59
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            enabled : false
+                            enabled: false
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).minute || 0
                         }
-                        Label { text: Qt.formatTime(new Date(2000, 0, 1, sleep_hh.value, sleep_mm.value, 0), "hh:mm") }
+                        Label {
+                            text: Qt.formatTime(new Date(2000, 0, 1, sleep_hh.value, sleep_mm.value, 0), "hh:mm")
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Wake Up Time"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Wake Up Time")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Hour") }
+                        Label {
+                            text: qsTr("Hour")
+                        }
                         SpinBox {
                             id: wake_hh
-                            from: 0; to: 23; stepSize: 1
+                            from: 0
+                            to: 23
+                            stepSize: 1
                             focusPolicy: Qt.StrongFocus
-                            enabled : false
+                            enabled: false
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).hour || 0
                         }
-                        Label { text: qsTr("Minute") }
-                        Label { text: ":" }
+                        Label {
+                            text: qsTr("Minute")
+                        }
+                        Label {
+                            text: ":"
+                        }
                         SpinBox {
                             id: wake_mm
-                            from: 0; to: 59; stepSize: 1
+                            from: 0
+                            to: 59
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            enabled : false
+                            enabled: false
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).minute || 0
                         }
-                        Label { text: Qt.formatTime(new Date(2000, 0, 1, wake_hh.value, wake_mm.value, 0), "hh:mm") }
+                        Label {
+                            text: Qt.formatTime(new Date(2000, 0, 1, wake_hh.value, wake_mm.value, 0), "hh:mm")
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Temperature"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Temperature")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Value") }
+                        Label {
+                            text: qsTr("Value")
+                        }
                         Slider {
                             id: tempSlider
-                            from: 30.0; to: 45.0; stepSize: 0.1
+                            from: 30.0
+                            to: 45.0
+                            stepSize: 0.1
                             Layout.preferredWidth: 220
                             value: statusEditorPage.status.temperature || 37.0
-                            enabled : false
+                            enabled: false
                         }
-                        Label { text: qsTr("%1 °C").arg((statusEditorPage.status.temperature || 37.0).toFixed(1)) }
+                        Label {
+                            text: qsTr("%1 °C").arg((statusEditorPage.status.temperature || 37.0).toFixed(1))
+                        }
                     }
-
                 }
             }
-            
         }
     }
 
@@ -396,10 +485,7 @@ Page {
                         padding: 0
                         topPadding: 0
                         bottomPadding: 0
-                        text: qsTr("Status Editor for %1-%2-%3")
-                            .arg(statusEditorPage.year)
-                            .arg(statusEditorPage.month)
-                            .arg(statusEditorPage.day)
+                        text: qsTr("Status Editor for %1-%2-%3").arg(statusEditorPage.year).arg(statusEditorPage.month).arg(statusEditorPage.day)
                         font.pixelSize: 20
                     }
 
@@ -407,147 +493,319 @@ Page {
                         width: parent.width
                         spacing: 8
 
-                        Label { text: qsTr("Mood") }
+                        Label {
+                            text: qsTr("Mood")
+                        }
 
                         Slider {
                             Layout.fillWidth: true
-                            from: 0; to: 5; stepSize: 1
+                            from: 0
+                            to: 5
+                            stepSize: 1
                             value: statusEditorPage.mood
                             onValueChanged: statusEditorPage.mood = Math.round(value)
                         }
 
-                        Label { text: getMoodText(statusEditorPage.mood) }
+                        Label {
+                            text: getMoodText(statusEditorPage.mood)
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Free Mood Text"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Free Mood Text")
+                        font.pixelSize: 20
+                    }
 
                     ScrollView {
-                            width: Math.min(600, parent.width)
-                            height: 240
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
-                            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                            
-                            TextArea {
-                                id: freeMoodTextArea
-                                wrapMode: TextArea.Wrap
-                                padding: 0
-                                text: statusEditorPage.status.free_mood_text
-                                onTextChanged: statusEditorPage.status.free_mood_text = text
-                            }
+                        width: Math.min(600, parent.width)
+                        height: 240
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                        TextArea {
+                            id: freeMoodTextArea
+                            wrapMode: TextArea.Wrap
+                            padding: 0
+                            text: statusEditorPage.status.free_mood_text
+                            onTextChanged: statusEditorPage.status.free_mood_text = text
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Sleep Time"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Sleep Time")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Hour") }
+                        Label {
+                            text: qsTr("Hour")
+                        }
                         SpinBox {
                             id: sleep_hh
-                            from: 0; to: 23; stepSize: 1
+                            from: 0
+                            to: 23
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            Keys.onLeftPressed:  { value = value - stepSize; event.accepted = true }
-                            Keys.onRightPressed: { value = value + stepSize; event.accepted = true }
-                            Keys.onUpPressed:    { value = value + stepSize; event.accepted = true }
-                            Keys.onDownPressed:  { value = value - stepSize; event.accepted = true }
+                            Keys.onLeftPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onRightPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onUpPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onDownPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+                            editable: true
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator {
+                                bottom: 0
+                                top: 23
+                            }
+                            textFromValue: function (v, locale) {
+                                return String(v).padStart(2, '0');
+                            }
+                            valueFromText: function (text, locale) {
+                                var n = parseInt(text);
+                                if (isNaN(n))
+                                    return from;
+                                return Math.max(from, Math.min(23, n));
+                            }
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).hour || 0
 
                             onValueChanged: statusEditorPage.sleep_hour = value
                         }
-                        Label { text: qsTr("Minute") }
-                        Label { text: ":" }
+                        Label {
+                            text: qsTr("Minute")
+                        }
+                        Label {
+                            text: ":"
+                        }
                         SpinBox {
                             id: sleep_mm
-                            from: 0; to: 59; stepSize: 1
+                            from: 0
+                            to: 59
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            Keys.onLeftPressed:  { value = value - stepSize; event.accepted = true }
-                            Keys.onRightPressed: { value = value + stepSize; event.accepted = true }
-                            Keys.onUpPressed:    { value = value + stepSize; event.accepted = true }
-                            Keys.onDownPressed:  { value = value - stepSize; event.accepted = true }
+                            Keys.onLeftPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onRightPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onUpPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onDownPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+
+                            editable: true
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator {
+                                bottom: 0
+                                top: 59
+                            }
+                            textFromValue: function (v, locale) {
+                                return String(v).padStart(2, '0');
+                            }
+
+                            valueFromText: function (text, locale) {
+                                var n = parseInt(text);
+                                if (isNaN(n))
+                                    return from;
+                                return Math.max(from, Math.min(59, n));
+                            }
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.sleep_time).minute || 0
 
                             onValueChanged: statusEditorPage.sleep_minute = value
                         }
-                        Label { text: Qt.formatTime(new Date(2000, 0, 1, sleep_hh.value, sleep_mm.value, 0), "hh:mm") }
+                        Label {
+                            text: Qt.formatTime(new Date(2000, 0, 1, sleep_hh.value, sleep_mm.value, 0), "hh:mm")
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Wake Up Time"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Wake Up Time")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Hour") }
+                        Label {
+                            text: qsTr("Hour")
+                        }
                         SpinBox {
                             id: wake_hh
-                            from: 0; to: 23; stepSize: 1
+                            from: 0
+                            to: 23
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            Keys.onLeftPressed:  { value = value - stepSize; event.accepted = true }
-                            Keys.onRightPressed: { value = value + stepSize; event.accepted = true }
-                            Keys.onUpPressed:    { value = value + stepSize; event.accepted = true }
-                            Keys.onDownPressed:  { value = value - stepSize; event.accepted = true }
+                            Keys.onLeftPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onRightPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onUpPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onDownPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+
+                            editable: true
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator {
+                                bottom: 0
+                                top: 23
+                            }
+                            textFromValue: function (v, locale) {
+                                return String(v).padStart(2, '0');
+                            }
+                            valueFromText: function (text, locale) {
+                                var n = parseInt(text);
+                                if (isNaN(n))
+                                    return from;
+                                return Math.max(from, Math.min(23, n));
+                            }
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).hour || 0
                             onValueChanged: statusEditorPage.wake_hour = value
                         }
-                        Label { text: qsTr("Minute") }
-                        Label { text: ":" }
+                        Label {
+                            text: qsTr("Minute")
+                        }
+                        Label {
+                            text: ":"
+                        }
                         SpinBox {
                             id: wake_mm
-                            from: 0; to: 59; stepSize: 1
+                            from: 0
+                            to: 59
+                            stepSize: 1
                             wrap: true
                             focusPolicy: Qt.StrongFocus
-                            Keys.onLeftPressed:  { value = value - stepSize; event.accepted = true }
-                            Keys.onRightPressed: { value = value + stepSize; event.accepted = true }
-                            Keys.onUpPressed:    { value = value + stepSize; event.accepted = true }
-                            Keys.onDownPressed:  { value = value - stepSize; event.accepted = true }
+                            Keys.onLeftPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onRightPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onUpPressed: {
+                                value = value + stepSize;
+                                event.accepted = true;
+                            }
+                            Keys.onDownPressed: {
+                                value = value - stepSize;
+                                event.accepted = true;
+                            }
+
+                            editable: true
+                            inputMethodHints: Qt.ImhDigitsOnly
+                            validator: IntValidator {
+                                bottom: 0
+                                top: 59
+                            }
+
+                            textFromValue: function (v, locale) {
+                                return String(v).padStart(2, '0');
+                            }
+                            valueFromText: function (text, locale) {
+                                var n = parseInt(text);
+                                if (isNaN(n))
+                                    return from;
+                                return Math.max(from, Math.min(59, n));
+                            }
 
                             value: statusEditorPage.toHourMinuteDoubleValue(statusEditorPage.status.wake_up_time).minute || 0
 
                             onValueChanged: statusEditorPage.wake_minute = value
                         }
-                        Label { text: Qt.formatTime(new Date(2000, 0, 1, wake_hh.value, wake_mm.value, 0), "hh:mm") }
+                        Label {
+                            text: Qt.formatTime(new Date(2000, 0, 1, wake_hh.value, wake_mm.value, 0), "hh:mm")
+                        }
                     }
 
-                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: qsTr("Temperature"); font.pixelSize: 20 }
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: qsTr("Temperature")
+                        font.pixelSize: 20
+                    }
 
                     RowLayout {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Label { text: qsTr("Value") }
+                        Label {
+                            text: qsTr("Value")
+                        }
                         Slider {
                             id: tempSlider
-                            from: 30.0; to: 45.0; stepSize: 0.1
+                            from: 30.0
+                            to: 45.0
+                            stepSize: 0.1
                             Layout.preferredWidth: 220
                             value: statusEditorPage.status.temperature || 37.0
                             onValueChanged: {
-                                var v = Number(value.toFixed(1))
+                                var v = Number(value.toFixed(1));
                                 if (statusEditorPage.status.temperature !== v)
-                                    statusEditorPage.status.temperature = v
+                                    statusEditorPage.status.temperature = v;
                                 if (tempField.text !== v.toFixed(1))
-                                    tempField.text = v.toFixed(1)
+                                    tempField.text = v.toFixed(1);
                             }
                         }
                         TextField {
                             id: tempField
                             width: 80
                             text: (statusEditorPage.status.temperature || 37.0).toFixed(1)
-                            validator: DoubleValidator { bottom: 30.0; top: 45.0; decimals: 1 }
+                            validator: DoubleValidator {
+                                bottom: 30.0
+                                top: 45.0
+                                decimals: 1
+                            }
                             inputMethodHints: Qt.ImhFormattedNumbersOnly
                             onEditingFinished: {
-                                var v = parseFloat(text)
-                                if (isNaN(v)) { text = (statusEditorPage.status.temperature || 37.0).toFixed(1); return }
-                                v = Math.max(30.0, Math.min(45.0, Math.round(v * 10) / 10))
+                                var v = parseFloat(text);
+                                if (isNaN(v)) {
+                                    text = (statusEditorPage.status.temperature || 37.0).toFixed(1);
+                                    return;
+                                }
+                                v = Math.max(30.0, Math.min(45.0, Math.round(v * 10) / 10));
                                 if (statusEditorPage.status.temperature !== v)
-                                    statusEditorPage.status.temperature = v
+                                    statusEditorPage.status.temperature = v;
                                 if (tempSlider.value !== v)
-                                    tempSlider.value = v
-                                text = v.toFixed(1)
+                                    tempSlider.value = v;
+                                text = v.toFixed(1);
                             }
                         }
-                        Label { text: qsTr("°C") }
+                        Label {
+                            text: qsTr("°C")
+                        }
                     }
                 }
             }
@@ -556,7 +814,7 @@ Page {
 
     StackView.onStatusChanged: {
         if (StackView.status === StackView.Active)
-            loadStatus()
+            loadStatus();
     }
 
     onStatusJsonChanged: loadStatus()
