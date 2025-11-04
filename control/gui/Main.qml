@@ -13,24 +13,20 @@ ApplicationWindow {
     visible: true
 
     Component.onCompleted: {
-        requestActivate()
+        requestActivate();
     }
 
     property bool forceClose: false
 
-    property string appIdent: (typeof applicationIdent === "string" && applicationIdent.length > 0)
-                              ? applicationIdent : "main"
+    property string appIdent: (typeof applicationIdent === "string" && applicationIdent.length > 0) ? applicationIdent : "main"
 
-    property string initWorkspace: (typeof initialWorkspacePath === "string" && initialWorkspacePath.length >0)
-                              ? initialWorkspacePath : ""
+    property string initWorkspace: (typeof initialWorkspacePath === "string" && initialWorkspacePath.length > 0) ? initialWorkspacePath : ""
 
     property int initScope: initialScope
     property int initFilter: initialFilter
 
-    property string initTo: (typeof initialTo !== "undefined" && typeof initialTo === "string" && initialTo.length > 0)
-                            ? initialTo : ""
-    property string initFrom: (typeof initialFrom !== "undefined" && typeof initialFrom === "string" && initialFrom.length > 0)
-                              ? initialFrom : ""
+    property string initTo: (typeof initialTo !== "undefined" && typeof initialTo === "string" && initialTo.length > 0) ? initialTo : ""
+    property string initFrom: (typeof initialFrom !== "undefined" && typeof initialFrom === "string" && initialFrom.length > 0) ? initialFrom : ""
 
     width: settings.windowWidth
     height: settings.windowHeight
@@ -40,12 +36,8 @@ ApplicationWindow {
     Material.accent: Material.Blue
 
     title: {
-
         const item = stackView.currentItem;
-        return item && item.title !== "undefined" && item.title !== ""
-              ? item.title
-              : qsTr("TitleMain");
-
+        return (item && item.title !== undefined && item.title !== "") ? item.title : qsTr("TitleMain");
     }
 
     onClosing: function (close) {
@@ -74,7 +66,7 @@ ApplicationWindow {
             id: mainContentItem
             property Component headerComponent: ToolBar {
                 RowLayout {
-                    anchors.fill : parent
+                    anchors.fill: parent
                     spacing: 10
 
                     ToolButton {
@@ -86,8 +78,11 @@ ApplicationWindow {
 
                             MenuItem {
                                 text: qsTr("ToolBarSettings")
-                                implicitWidth: 50
-                                implicitHeight: 30
+                                // 修正: implicitWidth/implicitHeight は代入不可
+                                // 修正前: implicitWidth: 50
+                                // 修正前: implicitHeight: 30
+                                width: 120
+                                height: 36
                                 contentItem: Text {
                                     text: parent.text
                                     color: Material.foreground
@@ -101,8 +96,11 @@ ApplicationWindow {
 
                             MenuItem {
                                 text: qsTr("ToolBarExit")
-                                implicitWidth: 100
-                                implicitHeight: 30
+                                // 修正: implicitWidth/implicitHeight は代入不可
+                                // 修正前: implicitWidth: 100
+                                // 修正前: implicitHeight: 30
+                                width: 140
+                                height: 36
                                 contentItem: Text {
                                     text: parent.text
                                     color: Material.foreground
@@ -121,27 +119,29 @@ ApplicationWindow {
             }
 
             function handleActivityChange(key) {
-                    switch (key) {
-                        case "toggle":
-                            sidePanel.isSelected = !sidePanel.isSelected
-                            break;
-                        case "createWorkspace":
-                            stackView.push(createWorkspaceComponent);
-                            break;
-                        case "openWorkspace":
-                            stackView.push(openWorkspaceComponent);
-                            break;
-                        case "settings":
-                            if (sidePanel.isSelected) sidePanel.isSelected = false
-                            else sidePanel.isSelected = true
-                            break;
-                    }
+                switch (key) {
+                case "toggle":
+                    sidePanel.isSelected = !sidePanel.isSelected;
+                    break;
+                case "createWorkspace":
+                    stackView.push(createWorkspaceComponent);
+                    break;
+                case "openWorkspace":
+                    stackView.push(openWorkspaceComponent);
+                    break;
+                case "settings":
+                    if (sidePanel.isSelected)
+                        sidePanel.isSelected = false;
+                    else
+                        sidePanel.isSelected = true;
+                    break;
+                }
             }
 
             StackView.onStatusChanged: {
                 if (StackView.status === StackView.Active) {
-                    activityLoader.currentKey = ""
-                } 
+                    activityLoader.currentKey = "";
+                }
             }
 
             RowLayout {
@@ -160,7 +160,9 @@ ApplicationWindow {
                     theme: settings.theme
                     ab_theme: settings.activityBarTheme
                     // onCurrentIndexChanged: statusEditorPage.handleActivityChange(currentIndex)
-                    onActivated: function(key) { mainContentItem.handleActivityChange(key) }
+                    onActivated: function (key) {
+                        mainContentItem.handleActivityChange(key);
+                    }
                 }
 
                 // サイドパネル
@@ -184,17 +186,47 @@ ApplicationWindow {
                         }
 
                         Column {
+                            id: settingsColumn
                             spacing: 8
                             padding: 8
-                            Label { text: qsTr("Settings") }
-                             RowLayout {
+                            width: sideStack.width
+
+                            Item {
+                                id: settingsHeaderRow
+                                width: settingsColumn.width - settingsColumn.padding * 2
+                                x: settingsColumn.padding
+                                implicitHeight: titleLabel.implicitHeight + 6 + 1
+                                height: implicitHeight
+
+                                Label {
+                                    id: titleLabel
+                                    anchors.top: parent.top
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: qsTr("Settings")
+                                    font.bold: true
+                                }
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: titleLabel.bottom
+                                    anchors.topMargin: 6
+                                    height: 1
+                                    color: settings.theme === "light" ? "#CCCCCC" : "#444444"
+                                }
+                            }
+
+                            RowLayout {
                                 spacing: 8
-                                Label { text: qsTr("Theme:") 
-                                        Layout.alignment: Qt.AlignVCenter 
+                                Label {
+                                    text: qsTr("Theme")
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
                                 ComboBox {
                                     id: themeComboBox
-                                    model: [ qsTr("Light"), qsTr("Dark") ]
+                                    Layout.preferredWidth: 80
+                                    Layout.preferredHeight: 44
+                                    model: [qsTr("Light"), qsTr("Dark")]
                                     currentIndex: settings.theme === "dark" ? 1 : 0
                                     onCurrentIndexChanged: {
                                         settings.setTheme(currentIndex === 0 ? "light" : "dark");
@@ -204,33 +236,132 @@ ApplicationWindow {
 
                             RowLayout {
                                 spacing: 8
-                                Label { text: qsTr("Width")
+                                Label {
+                                    text: qsTr("Width")
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                                 SpinBox {
                                     id: widthSpinBox
+                                    Layout.preferredWidth: 80
+                                    Layout.minimumWidth: 70
+                                    Layout.preferredHeight: 44
+                                    Layout.minimumHeight: 40
                                     from: 400
                                     to: 3840
                                     stepSize: 20
                                     value: settings.windowWidth
+                                    font.pixelSize: 12
+                                    leftPadding: 6
+                                    up.indicator: null
+                                    down.indicator: null
+
+                                    property int stepButtonsWidth: 28
+                                    property int stepButtonsInset: 5
+                                    rightPadding: stepButtonsWidth + 6 + stepButtonsInset
+
+                                    contentItem: Label {
+                                        text: widthSpinBox.displayText
+                                        font.pixelSize: widthSpinBox.font.pixelSize
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Item {
+                                        id: widthSpinButtons
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: widthSpinBox.stepButtonsInset
+                                        width: widthSpinBox.stepButtonsWidth
+
+                                        Column {
+                                            anchors.fill: parent
+                                            spacing: 0
+
+                                            ToolButton {
+                                                flat: true
+                                                text: "+"
+                                                font.pixelSize: 12
+                                                implicitHeight: parent.height / 2
+                                                onClicked: widthSpinBox.increase()
+                                            }
+                                            ToolButton {
+                                                flat: true
+                                                text: "-"
+                                                font.pixelSize: 12
+                                                implicitHeight: parent.height / 2
+                                                onClicked: widthSpinBox.decrease()
+                                            }
+                                        }
+                                    }
+
                                     onValueChanged: {
                                         settings.setWindowWidth(value);
                                         root.width = value;
                                     }
                                 }
-                            }
 
-                            RowLayout {
-                                spacing: 8
-                                Label { text: qsTr("Height")
+                                Label {
+                                    text: qsTr("Height")
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                                 SpinBox {
                                     id: heightSpinBox
+                                    Layout.preferredWidth: 80
+                                    Layout.minimumWidth: 70
+                                    Layout.preferredHeight: 44
+                                    Layout.minimumHeight: 40
                                     from: 300
                                     to: 2160
                                     stepSize: 20
                                     value: settings.windowHeight
+                                    font.pixelSize: 12
+                                    leftPadding: 6
+                                    up.indicator: null
+                                    down.indicator: null
+
+                                    property int stepButtonsWidth: 28
+                                    property int stepButtonsInset: 5
+                                    rightPadding: stepButtonsWidth + 6 + stepButtonsInset
+
+                                    contentItem: Label {
+                                        text: heightSpinBox.displayText
+                                        font.pixelSize: heightSpinBox.font.pixelSize
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Item {
+                                        id: heightSpinButtons
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: heightSpinBox.stepButtonsInset
+                                        width: heightSpinBox.stepButtonsWidth
+
+                                        Column {
+                                            anchors.fill: parent
+                                            spacing: 0
+
+                                            ToolButton {
+                                                flat: true
+                                                text: "+"
+                                                font.pixelSize: 12
+                                                implicitHeight: parent.height / 2
+                                                onClicked: heightSpinBox.increase()
+                                            }
+                                            ToolButton {
+                                                flat: true
+                                                text: "-"
+                                                font.pixelSize: 12
+                                                implicitHeight: parent.height / 2
+                                                onClicked: heightSpinBox.decrease()
+                                            }
+                                        }
+                                    }
+
                                     onValueChanged: {
                                         settings.setWindowHeight(value);
                                         root.height = value;
@@ -240,7 +371,9 @@ ApplicationWindow {
 
                             RowLayout {
                                 spacing: 8
-                                Label {text: qsTr("isAnyItemCreatedAfterOpening")}
+                                Label {
+                                    text: qsTr("isAnyItemCreatedAfterOpening")
+                                }
                                 CheckBox {
                                     id: anyItemCreatedCheckBox
                                     checked: settings.isAnyItemCreatedAfterOpening
@@ -275,7 +408,7 @@ ApplicationWindow {
 
             Component {
                 id: mainMenuComponent
-                 Item {
+                Item {
                     anchors.fill: parent
 
                     Label {
@@ -308,14 +441,14 @@ ApplicationWindow {
         id: settingsComponent
 
         Settings {
-            onShowError: function(message) {
+            onShowError: function (message) {
                 errorLabel.text = message;
                 errorDialog.open();
             }
-            onBackRequested: function() {
+            onBackRequested: function () {
                 stackView.pop();
             }
-            onSaveAndRequestBack: function() {
+            onSaveAndRequestBack: function () {
                 stackView.pop();
             }
         }
@@ -324,16 +457,15 @@ ApplicationWindow {
     Component {
         id: createWorkspaceComponent
         CreateWorkspaceForm {
-            onShowError: function(message) {
+            onShowError: function (message) {
                 errorLabel.text = message;
                 errorDialog.open();
             }
-            onBackRequested: function() {
+            onBackRequested: function () {
                 stackView.pop();
             }
-            onWorkspaceCreated: function(userName,name, path) {
-                
-                let result = settings.createWorkspaceFromQml(userName,name, path);
+            onWorkspaceCreated: function (userName, name, path) {
+                let result = settings.createWorkspaceFromQml(userName, name, path);
 
                 if (result === 0) {
                     console.log("Workspace created successfully");
@@ -356,14 +488,14 @@ ApplicationWindow {
             id: mainUserPageInstance
             themeSettings: settings.theme
             activityBarThemeSettings: settings.activityBarTheme
-            onShowError: function(message) {
+            onShowError: function (message) {
                 errorLabel.text = message;
                 errorDialog.open();
             }
-            onBackRequested: function() {
+            onBackRequested: function () {
                 stackView.pop();
             }
-            onRequestGetUserName: function(path) {
+            onRequestGetUserName: function (path) {
                 let userName = settings.getSettings(path);
                 if (userName.length > 0) {
                     mainUserPageInstance.userName = userName[0];
@@ -371,7 +503,7 @@ ApplicationWindow {
                     mainUserPageInstance.userName = "Unknown";
                 }
             }
-            onRequestCreateDiary: function(year, month, day, title, path) {
+            onRequestCreateDiary: function (year, month, day, title, path) {
                 let result = settings.createDiary(year, month, day, title, path);
                 let urlStr = result && result.toString ? result.toString() : String(result);
                 if (urlStr && urlStr.length > 0) {
@@ -390,7 +522,7 @@ ApplicationWindow {
                 }
             }
 
-            onRequestCreateStatus: function(year, month, day, path) {
+            onRequestCreateStatus: function (year, month, day, path) {
                 let result = settings.createStatus(path);
                 if (result === 0) {
                     console.log("Status created successfully");
@@ -405,7 +537,7 @@ ApplicationWindow {
                 }
             }
 
-            onRequestMonthUserDiarySqlData: function(year, month, path) {
+            onRequestMonthUserDiarySqlData: function (year, month, path) {
                 let sqlData = settings.getMonthUserDiarySqlData(year, month, path);
                 if (sqlData) {
                     console.log("Retrieved diary data for", year, month, ":", sqlData);
@@ -416,7 +548,7 @@ ApplicationWindow {
                 }
             }
 
-            onRequestMonthUserStatusData: function(year, month, path) {
+            onRequestMonthUserStatusData: function (year, month, path) {
                 let statusData = settings.getMonthUserStatusData(year, month, path);
                 if (statusData) {
                     mainUserPageInstance.handleStatusData(statusData);
@@ -430,15 +562,19 @@ ApplicationWindow {
                 settings.openGraphWindow(path, Scope, Filter, toStr, fromStr);
             }
 
-            onRequestNavigateMarkdownEditor: function(contentPath) {
-                stackView.push(markdownEditorComponent, { markdownContentPath: contentPath });
+            onRequestNavigateMarkdownEditor: function (contentPath) {
+                stackView.push(markdownEditorComponent, {
+                    markdownContentPath: contentPath
+                });
             }
 
-            onRequestNavigateMarkdownViewer: function(contentPath) {
-                stackView.push(markdownViewerComponent, { markdownContentPath: contentPath });
+            onRequestNavigateMarkdownViewer: function (contentPath) {
+                stackView.push(markdownViewerComponent, {
+                    markdownContentPath: contentPath
+                });
             }
 
-            onRequestSearch: function(query, scope, caseSensitive, useRegex, path) {
+            onRequestSearch: function (query, scope, caseSensitive, useRegex, path) {
                 let resultsJson = settings.search(query, scope, caseSensitive, useRegex, path);
                 if (resultsJson) {
                     mainUserPageInstance.updateSearchResults(resultsJson);
@@ -450,18 +586,18 @@ ApplicationWindow {
 
             Component {
                 id: markdownEditorComponent
-                
+
                 MarkEditor {
                     id: markdownEditorPage
-                    onBackRequested: function() {
+                    onBackRequested: function () {
                         stackView.pop();
                     }
-                    onRequestLoadMarkdownFile: function(path) {
+                    onRequestLoadMarkdownFile: function (path) {
                         let content = settings.loadMarkdownFile(path);
-                            markdownEditorPage.rawMarkdownContent = content;
-                            markdownEditorPage.markdownContentPath = path;
+                        markdownEditorPage.rawMarkdownContent = content;
+                        markdownEditorPage.markdownContentPath = path;
                     }
-                    onRequestWriteMarkdownFile: function(path, content) {
+                    onRequestWriteMarkdownFile: function (path, content) {
                         let result = settings.writeMarkdownFile(path, content);
                         if (result === 0) {
                             console.log("Markdown file saved successfully");
@@ -472,30 +608,33 @@ ApplicationWindow {
                     }
                 }
             }
-            
+
             Component {
                 id: markdownViewerComponent
 
                 MarkDownViewer {
                     id: markdownViewerPage
-                    onBackRequested: function() {
+                    onBackRequested: function () {
                         stackView.pop();
                     }
-                    onRequestLoadMarkdownFile: function(path) {
+                    onRequestLoadMarkdownFile: function (path) {
                         let content = settings.loadMarkdownFile(path);
-                            markdownViewerPage.updateMarkdownContent(content);
+                        markdownViewerPage.updateMarkdownContent(content);
                     }
                 }
             }
 
-            onRequestStatusEditor: function(year, month, day, jsonString, path, mode) {
-                stackView.push(statusEditorComponent, { year: year , month: month, day: day,
-                                                        statusJson: jsonString,
-                                                        workspacePath: path,
-                                                        mode: mode,
-                                                        themeSettings: settings.theme,
-                                                        activityBarThemeSettings: settings.activityBarTheme
-                                                    });
+            onRequestStatusEditor: function (year, month, day, jsonString, path, mode) {
+                stackView.push(statusEditorComponent, {
+                    year: year,
+                    month: month,
+                    day: day,
+                    statusJson: jsonString,
+                    workspacePath: path,
+                    mode: mode,
+                    themeSettings: settings.theme,
+                    activityBarThemeSettings: settings.activityBarTheme
+                });
             }
 
             Component {
@@ -503,10 +642,10 @@ ApplicationWindow {
 
                 StatusEditor {
                     id: statusEditorPage
-                    onBackRequested: function() {
+                    onBackRequested: function () {
                         stackView.pop();
                     }
-                    onRequestEditStatus: function(year, month, day, jsonString, path) {
+                    onRequestEditStatus: function (year, month, day, jsonString, path) {
                         let rc = settings.editStatus(year, month, day, jsonString, path);
                         if (rc === 0) {
                             mainUserPageInstance.reloadMonthData();
@@ -539,11 +678,13 @@ ApplicationWindow {
                     workspaceModel = allWorkspaces;
                 } else {
                     // allWorkspaces is expected to be an array of names
-                    workspaceModel = allWorkspaces.filter(function(name) { return String(name).toLowerCase().indexOf(q) !== -1; });
+                    workspaceModel = allWorkspaces.filter(function (name) {
+                        return String(name).toLowerCase().indexOf(q) !== -1;
+                    });
                 }
             }
 
-            ColumnLayout {  
+            ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 16
                 spacing: 12
@@ -580,10 +721,13 @@ ApplicationWindow {
                         enabled: workspaceListView.currentIndex >= 0 && workspaceListView.count > 0
                         onClicked: {
                             const idx = workspaceListView.currentIndex;
-                            if (idx < 0) return;
+                            if (idx < 0)
+                                return;
                             const name = openWorkspaceItem.workspaceModel[idx];
                             const workspace = openWorkspaceItem.settingsRef.getWorkspaceWithName(name);
-                            stackView.push(mainUserPageComponent, { workspacePath: workspace[1] });
+                            stackView.push(mainUserPageComponent, {
+                                workspacePath: workspace[1]
+                            });
                         }
                     }
                 }
@@ -613,7 +757,7 @@ ApplicationWindow {
 
                                 Rectangle {
                                     anchors.fill: parent
-                                    color: ListView.isCurrentItem ? Qt.rgba(0,0,0,0.08) : "transparent"
+                                    color: ListView.isCurrentItem ? Qt.rgba(0, 0, 0, 0.08) : "transparent"
                                 }
 
                                 ColumnLayout {
@@ -635,7 +779,9 @@ ApplicationWindow {
                                             text: qsTr("Open")
                                             onClicked: {
                                                 const ws = openWorkspaceItem.settingsRef.getWorkspaceWithName(rowDelegate.modelData);
-                                                stackView.push(mainUserPageComponent, { workspacePath: ws[1] });
+                                                stackView.push(mainUserPageComponent, {
+                                                    workspacePath: ws[1]
+                                                });
                                             }
                                         }
                                         Button {
@@ -655,20 +801,26 @@ ApplicationWindow {
                                         color: Material.hintTextColor
                                         elide: Text.ElideMiddle
                                     }
-                                    Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.rgba(0,0,0,0.1) }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        implicitHeight: 1
+                                        color: Qt.rgba(0, 0, 0, 0.1)
+                                    }
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     z: -1
-                                    onClicked: function(mouse) {
+                                    onClicked: function (mouse) {
                                         var pt = workspaceListView.mapFromItem(rowDelegate, mouse.x, mouse.y);
                                         workspaceListView.currentIndex = workspaceListView.indexAt(pt.x, pt.y);
                                     }
                                     onDoubleClicked: {
                                         const ws = openWorkspaceItem.settingsRef.getWorkspaceWithName(rowDelegate.modelData);
-                                        stackView.push(mainUserPageComponent, { workspacePath: ws[1] });
+                                        stackView.push(mainUserPageComponent, {
+                                            workspacePath: ws[1]
+                                        });
                                     }
                                 }
                             }
@@ -679,11 +831,11 @@ ApplicationWindow {
                                 sourceComponent: Column {
                                     spacing: 8
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    Label { text: qsTr("No workspaces to show") }
                                     Label {
-                                        text: searchField.text && searchField.text.length > 0
-                                              ? qsTr("Try a different search or clear the filter")
-                                              : qsTr("Use 'Open from Folder' to import, or create one from the main menu")
+                                        text: qsTr("No workspaces to show")
+                                    }
+                                    Label {
+                                        text: searchField.text && searchField.text.length > 0 ? qsTr("Try a different search or clear the filter") : qsTr("Use 'Open from Folder' to import, or create one from the main menu")
                                         color: Material.hintTextColor
                                     }
                                 }
@@ -699,7 +851,9 @@ ApplicationWindow {
                         text: qsTr("Open from Folder")
                         onClicked: folderDialog.open()
                     }
-                    Item { Layout.fillWidth: true }
+                    Item {
+                        Layout.fillWidth: true
+                    }
                     Button {
                         text: qsTr("Back")
                         onClicked: stackView.pop()
@@ -727,14 +881,13 @@ ApplicationWindow {
                 title: qsTr("Delete workspace?")
                 modal: true
                 standardButtons: Dialog.Ok | Dialog.Cancel
-                contentItem: Column {
-                    width: Math.min(440, root.width - 64)
-                    spacing: 8
-                    Label {
-                        text: qsTr("Are you sure you want to delete '%1'? This cannot be undone.")
-                              .arg(openWorkspaceItem.pendingDeleteName)
-                        wrapMode: Text.WordWrap
-                    }
+                contentWidth: Math.min(440, root.width - 64)
+
+                contentItem: Label {
+                    wrapMode: Text.WordWrap
+                    width: deleteConfirmDialog.contentWidth
+                    text: qsTr("Are you sure you want to delete '%1'? This cannot be undone.")
+                          .arg(openWorkspaceItem.pendingDeleteName)
                 }
                 onAccepted: {
                     const result = openWorkspaceItem.settingsRef.deleteWorkspace(openWorkspaceItem.pendingDeleteName);
@@ -752,41 +905,40 @@ ApplicationWindow {
     }
 
     Component {
-    
         id: graphViewerComponent
         GraphViewer {
-           id: graphViewer
+            id: graphViewer
 
-           workspace: root.initWorkspace
-           scope: root.initScope
-           filter: root.initFilter
-           to: root.initTo
-           from: root.initFrom
+            workspace: root.initWorkspace
+            scope: root.initScope
+            filter: root.initFilter
+            to: root.initTo
+            from: root.initFrom
 
-           onRequestGraphData: function(workspace, scope, filter, to, from) {
-               console.log("Requesting graph data for workspace:", workspace, "scope:", scope, "filter:", filter, "to:", to, "from:", from);
-               let graphData = settings.getGraphData(workspace, scope, filter, to, from);
-               if (graphData) {
-                   graphViewer.graphData = graphData;
-                   graphViewer.updateGraph();
-               } else {
-                   errorLabel.text = qsTr("Failed to retrieve graph data");
-                   errorDialog.open();
-               }
-           }
+            onRequestGraphData: function (workspace, scope, filter, to, from) {
+                console.log("Requesting graph data for workspace:", workspace, "scope:", scope, "filter:", filter, "to:", to, "from:", from);
+                let graphData = settings.getGraphData(workspace, scope, filter, to, from);
+                if (graphData) {
+                    graphViewer.graphData = graphData;
+                    graphViewer.updateGraph();
+                } else {
+                    errorLabel.text = qsTr("Failed to retrieve graph data");
+                    errorDialog.open();
+                }
+            }
         }
     }
 
     function handleSelectionChange(index) {
         switch (index) {
-            case 0:
-                stackView.push(createWorkspaceComponent);
-                break
-            case 1:
-                stackView.push(openWorkspaceComponent)
-                break
-            default:
-                console.log("Unknown option selected")
+        case 0:
+            stackView.push(createWorkspaceComponent);
+            break;
+        case 1:
+            stackView.push(openWorkspaceComponent);
+            break;
+        default:
+            console.log("Unknown option selected");
         }
     }
 
