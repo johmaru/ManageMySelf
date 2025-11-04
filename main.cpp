@@ -8,6 +8,7 @@
 #include <QIcon>
 #include <QLibraryInfo>
 #include <QLocale>
+#include <QMutex>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
 #include <QQmlContext>
@@ -19,12 +20,73 @@
 #include <QStringLiteral>
 #include <QTranslator>
 #include <memory>
+#include <qdatetime.h>
+#include <qfiledevice.h>
+#include <qlogging.h>
 #include <qqmlcontext.h>
+#include <qstandardpaths.h>
+
+static QFile g_log_file;
+static QTextStream g_log_stream;
+static QMutex g_log_mutex;
+static QtMessageHandler g_prev_handler = nullptr;
+
+static void fileMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg) {
+    QMutexLocker locker(&g_log_mutex);
+
+    if (!g_log_file.isOpen()) {
+        const QString LOG_DIR =
+            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
+            "/ManageMySelf/logs/";
+        QDir().mkpath(LOG_DIR);
+        const QString FILE_PATH =
+            LOG_DIR + QString("/ManageMySelf-%1.log")
+                          .arg(QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"));
+        g_log_file.setFileName(FILE_PATH);
+        g_log_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        g_log_stream.setDevice(&g_log_file);
+    }
+
+    QString level;
+    switch (type) {
+    case QtDebugMsg:
+        level = "DEBUG";
+        break;
+    case QtInfoMsg:
+        level = "INFO";
+        break;
+    case QtWarningMsg:
+        level = "WARNING";
+        break;
+    case QtCriticalMsg:
+        level = "CRITICAL";
+        break;
+    case QtFatalMsg:
+        level = "FATAL";
+        break;
+    }
+
+    const QString LINE = QString("[%1] %2 (%3:%4, %5)\n")
+                             .arg(level)
+                             .arg(msg)
+                             .arg(QString((ctx.file != nullptr) ? ctx.file : ""))
+                             .arg(ctx.line)
+                             .arg(QString((ctx.function != nullptr) ? ctx.function : ""));
+
+    g_log_stream << LINE << '\n';
+    g_log_stream.flush();
+    if (g_prev_handler != nullptr) {
+        g_prev_handler(type, ctx, msg);
+    }
+}
 
 int main(int argc, char* argv[]) {
 
     QApplication app(argc, argv);
     QApplication::setQuitOnLastWindowClosed(true);
+
+    g_prev_handler = qInstallMessageHandler(fileMessageHandler);
+    qInfo() << "Application started.";
 
     QCommandLineParser parser;
     parser.setApplicationDescription("ManageMySelf - Personal Management Application");
