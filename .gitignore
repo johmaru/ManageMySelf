@@ -94,3 +94,11 @@ build
 
 # Idea
 .idea
+
+# VS Studio
+.vs
+out/*
+
+# VCPKG
+
+vcpkg_installed/*

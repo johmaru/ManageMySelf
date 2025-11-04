@@ -1,52 +1,173 @@
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
-#include <QIcon>
-#include <QTranslator>
-#include <QLocale>
-#include <QDebug>
-#include <QFile>
-#include <QString>
-#include <QStringLiteral>
-#include <qqmlcontext.h>
-#include <QQmlEngine>
-#include <QQmlContext>
-#include <QSettings>
-#include <QQuickStyle>
-#include <QQmlComponent>
-#include <QQuickWindow>
-#include <QLibraryInfo>
-
 #include "fs/SqLiteBase.h"
 #include "fs/global_settings.h"
 
-int main(int argc, char *argv[]) {
+#include <QApplication>
+#include <QCommandLineParser>
+#include <QDebug>
+#include <QFile>
+#include <QIcon>
+#include <QLibraryInfo>
+#include <QLocale>
+#include <QMutex>
+#include <QQmlApplicationEngine>
+#include <QQmlComponent>
+#include <QQmlContext>
+#include <QQmlEngine>
+#include <QQuickStyle>
+#include <QQuickWindow>
+#include <QSettings>
+#include <QString>
+#include <QStringLiteral>
+#include <QTranslator>
+#include <memory>
+#include <qdatetime.h>
+#include <qfiledevice.h>
+#include <qlogging.h>
+#include <qqmlcontext.h>
+#include <qstandardpaths.h>
 
-    QGuiApplication a(argc, argv);
+static QFile g_log_file;
+static QTextStream g_log_stream;
+static QMutex g_log_mutex;
+static QtMessageHandler g_prev_handler = nullptr;
 
-    a.setOrganizationName("Johma");
-    a.setApplicationName("ManageMySelf");
+static void fileMessageHandler(QtMsgType type, const QMessageLogContext& ctx, const QString& msg) {
+    QMutexLocker locker(&g_log_mutex);
+
+    if (!g_log_file.isOpen()) {
+        const QString LOG_DIR =
+            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) +
+            "/ManageMySelf/logs/";
+        QDir().mkpath(LOG_DIR);
+        const QString FILE_PATH =
+            LOG_DIR + QString("/ManageMySelf-%1.log")
+                          .arg(QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"));
+        g_log_file.setFileName(FILE_PATH);
+        g_log_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        g_log_stream.setDevice(&g_log_file);
+    }
+
+    QString level;
+    switch (type) {
+    case QtDebugMsg:
+        level = "DEBUG";
+        break;
+    case QtInfoMsg:
+        level = "INFO";
+        break;
+    case QtWarningMsg:
+        level = "WARNING";
+        break;
+    case QtCriticalMsg:
+        level = "CRITICAL";
+        break;
+    case QtFatalMsg:
+        level = "FATAL";
+        break;
+    }
+
+    const QString LINE = QString("[%1] %2 (%3:%4, %5)\n")
+                             .arg(level)
+                             .arg(msg)
+                             .arg(QString((ctx.file != nullptr) ? ctx.file : ""))
+                             .arg(ctx.line)
+                             .arg(QString((ctx.function != nullptr) ? ctx.function : ""));
+
+    g_log_stream << LINE << '\n';
+    g_log_stream.flush();
+    if (g_prev_handler != nullptr) {
+        g_prev_handler(type, ctx, msg);
+    }
+}
+
+int main(int argc, char* argv[]) {
+
+    QApplication app(argc, argv);
+    QApplication::setQuitOnLastWindowClosed(true);
+
+    g_prev_handler = qInstallMessageHandler(fileMessageHandler);
+    qInfo() << "Application started.";
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("ManageMySelf - Personal Management Application");
+    parser.addHelpOption();
+
+    QCommandLineOption parent_win_id_opt(QStringLiteral("parent-winid"),
+                                         QStringLiteral("Parent window WId (owner)"),
+                                         QStringLiteral("id"));
+    QCommandLineOption ident_opt(("ident"),
+                                 QStringLiteral("Unique identifier for the application instance"),
+                                 QStringLiteral("n"));
+    QCommandLineOption workspace_opt(QStringLiteral("workspace"), QStringLiteral("Workspace path"),
+                                     QStringLiteral("path"));
+    QCommandLineOption scope_opt(QStringLiteral("scope"), QStringLiteral("Graph scope"),
+                                 QStringLiteral("n"));
+    QCommandLineOption filter_opt(QStringLiteral("filter"), QStringLiteral("Graph filter"),
+                                  QStringLiteral("n"));
+    QCommandLineOption to_opt(QStringLiteral("to"), QStringLiteral("Graph to date"),
+                              QStringLiteral("n"));
+    QCommandLineOption from_opt(QStringLiteral("from"), QStringLiteral("Graph from date"),
+                                QStringLiteral("n"));
+    parser.addOption(parent_win_id_opt);
+    parser.addOption(workspace_opt);
+    parser.addOption(scope_opt);
+    parser.addOption(filter_opt);
+    parser.addOption(ident_opt);
+    parser.addOption(to_opt);
+    parser.addOption(from_opt);
+    parser.process(app);
+
+    const QString PARENT_ID_STR = parser.value(parent_win_id_opt);
+    const QString WORKSPACE_PATH_ARG = parser.value(workspace_opt);
+    const int SCOPE_ARGS = parser.value(scope_opt).toInt();
+    const int FILTER_ARGS = parser.value(filter_opt).toInt();
+    const QString IDENT_STR = parser.value(ident_opt);
+    const QString TO_STR = parser.value(to_opt);
+    const QString FROM_STR = parser.value(from_opt);
+
+    QApplication::setOrganizationName("Johma");
+    QApplication::setApplicationName("ManageMySelf");
 
     QQmlApplicationEngine engine;
 
+    engine.rootContext()->setContextProperty(QStringLiteral("initialWorkspacePath"),
+                                             WORKSPACE_PATH_ARG);
+    engine.rootContext()->setContextProperty(QStringLiteral("initialScope"), SCOPE_ARGS);
+    engine.rootContext()->setContextProperty(QStringLiteral("initialFilter"), FILTER_ARGS);
+    engine.rootContext()->setContextProperty(QStringLiteral("initialTo"), TO_STR);
+    engine.rootContext()->setContextProperty(QStringLiteral("initialFrom"), FROM_STR);
+    engine.rootContext()->setContextProperty(QStringLiteral("applicationIdent"),
+                                             IDENT_STR.isEmpty() ? QStringLiteral("main")
+                                                                 : IDENT_STR);
     engine.addImportPath("qrc:/");
-  
-    const QString envQmlPath = qEnvironmentVariable("QT_QML_IMPORT_PATH");
-    if (!envQmlPath.isEmpty()) {
-        engine.addImportPath(envQmlPath);
+
+    const QString ENV_QML_PATH = qEnvironmentVariable("QT_QML_IMPORT_PATH");
+    if (!ENV_QML_PATH.isEmpty()) {
+        engine.addImportPath(ENV_QML_PATH);
     } else {
-        const QString qtQml = QLibraryInfo::path(QLibraryInfo::QmlImportsPath);
-        if (!qtQml.isEmpty()) engine.addImportPath(qtQml);
+        const QString QT_QML = QLibraryInfo::path(QLibraryInfo::QmlImportsPath);
+        if (!QT_QML.isEmpty()) {
+            engine.addImportPath(QT_QML);
+        }
     }
 
-    auto *settings = new GlobalSettings(&engine);
+    auto settings_holder = std::make_unique<GlobalSettings>(&engine);
+    GlobalSettings* settings = settings_holder.get();
 
-    const QString filePath = settings->getFilePath();
+    const QString FILE_PATH = settings->getFilePath();
 
-    if (filePath.isEmpty() || !settings->loadFromFile(filePath)) {
-        qWarning() << "Could not load settings from" << filePath << ". Using default settings and creating a new file.";
-        if (!filePath.isEmpty()) {
-            if (!settings->saveToFile(filePath)) {
-                qWarning() << "Failed to save initial settings file to" << filePath;
+    if (!FILE_PATH.isEmpty() && settings->loadFromFile(FILE_PATH)) {
+        if (settings->migrationJson(FILE_PATH) != 0) {
+            qWarning() << "Failed to migrate settings file:" << FILE_PATH;
+        }
+    }
+
+    if (FILE_PATH.isEmpty() || !settings->loadFromFile(FILE_PATH)) {
+        qWarning() << "Could not load settings from" << FILE_PATH
+                   << ". Using default settings and creating a new file.";
+        if (!FILE_PATH.isEmpty()) {
+            if (!settings->saveToFile(FILE_PATH)) {
+                qWarning() << "Failed to save initial settings file to" << FILE_PATH;
             }
         }
     }
@@ -56,39 +177,67 @@ int main(int argc, char *argv[]) {
     if (sqlite.checkMainDatabaseAndCreate() != 0) {
         qWarning() << "Failed to check or create the main database.";
         return -1; // Exit if the database cannot be created or checked
-    } else {
-        qInfo() << "Main database is ready.";
     }
-
-
+    qInfo() << "Main database is ready.";
 
     settings->initialize(&engine);
 
     engine.rootContext()->setContextProperty("settings", settings);
 
-    const QUrl url(QStringLiteral("qrc:/Main.qml"));
+    settings = settings_holder.release();
 
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &a, [url](QObject *obj, const QUrl &objUrl) {
-        if (!obj && url == objUrl)
-            QCoreApplication::exit(-1);
-    }, Qt::QueuedConnection);
+    const QUrl URL(QStringLiteral("qrc:/Main.qml"));
 
-    engine.load(url);
+    QObject::connect(
+        &engine, &QQmlApplicationEngine::objectCreated, &app,
+        [URL](QObject* obj, const QUrl& objUrl) {
+            if (!obj && URL == objUrl) {
+                QCoreApplication::exit(-1);
+            }
+        },
+        Qt::QueuedConnection);
+
+    engine.load(URL);
 
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "FATAL: Failed to load QML. The list of root objects is empty.";
-        qCritical() << "This usually means the resource was not found (check qrc and CMakeLists.txt)";
+        qCritical()
+            << "This usually means the resource was not found (check qrc and CMakeLists.txt)";
         qCritical() << "or the QML file itself contains a syntax error.";
-        
-        const auto importPaths = engine.importPathList();
+
+        const auto IMPORT_PATHS = engine.importPathList();
         qCritical() << "Current QML import paths:";
-        for (const auto &path : importPaths) {
+        for (const auto& path : IMPORT_PATHS) {
             qCritical() << "  " << path;
         }
-        
+
         return -1;
     }
 
-    return a.exec();
+    auto* win = qobject_cast<QQuickWindow*>(engine.rootObjects().front());
+    std::unique_ptr<QWindow> foreign_owner;
+
+    if (!PARENT_ID_STR.isEmpty() && (win != nullptr)) {
+        bool ok = false;
+        quint64 id = PARENT_ID_STR.toULongLong(&ok, 0);
+        if (ok) {
+            QWindow* parent = QWindow::fromWinId((WId) id);
+            if (parent != nullptr) {
+                foreign_owner.reset(parent);
+                win->setTransientParent(parent);
+                win->setFlags(win->flags() | Qt::Window);
+                QObject::connect(win, &QQuickWindow::closing, win,
+                                 [&foreign_owner](QQuickCloseEvent*) { foreign_owner.reset(); });
+
+                QObject::connect(&app, &QCoreApplication::aboutToQuit, &app,
+                                 [&foreign_owner] { foreign_owner.reset(); });
+            } else {
+                qWarning() << "Failed to find window with WId" << id << "to set as parent.";
+            }
+        } else {
+            qWarning() << "Invalid parent window ID format:" << PARENT_ID_STR;
+        }
+    }
+
+    return QApplication::exec();
 }

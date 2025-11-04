@@ -8,22 +8,29 @@
 #include <QJsonObject>
 
 class JsonSettingsBase {
-public:
+  public:
+    JsonSettingsBase() = default;
+    JsonSettingsBase(const JsonSettingsBase&) = default;
+    JsonSettingsBase(JsonSettingsBase&&) noexcept = default;
+    JsonSettingsBase& operator=(const JsonSettingsBase&) = default;
+    JsonSettingsBase& operator=(JsonSettingsBase&&) noexcept = default;
     virtual ~JsonSettingsBase() = default;
 
-    [[nodiscard]] virtual QJsonObject toJson()const = 0;
+    virtual int migrationJson(QString filepath) = 0;
 
-    virtual void loadFromJson(const QJsonObject &json) = 0;
+    [[nodiscard]] virtual QJsonObject toJson() const = 0;
 
-    [[nodiscard]] bool saveToFile(const QString &filePath) const;
+    virtual void loadFromJson(const QJsonObject& json) = 0;
 
-    bool loadFromFile(const QString &filePath);
+    [[nodiscard]] bool saveToFile(const QString& filePath) const;
+
+    bool loadFromFile(const QString& filePath);
 
     [[nodiscard]] virtual QString getFilePath() const = 0;
 
-    [[nodiscard]] static int saveToFileAny(const QString &filePath, const QJsonObject &json);
+    [[nodiscard]] static int saveToFileAny(const QString& filePath, const QJsonObject& json);
 
-    [[nodiscard]] static QJsonObject loadFromFileAny(const QString &filePath);
+    [[nodiscard]] static QJsonObject loadFromFileAny(const QString& filePath);
 };
 
-#endif //MANAGEMYSELF_JSONSETTINGSBASE_H
+#endif // MANAGEMYSELF_JSONSETTINGSBASE_H
